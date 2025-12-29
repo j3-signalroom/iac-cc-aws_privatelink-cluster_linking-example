@@ -109,7 +109,7 @@ then
     \naws_session_token=\"${AWS_SESSION_TOKEN}\"\
     \nconfluent_api_key=\"${confluent_api_key}\"\
     \nconfluent_api_secret=\"${confluent_api_secret}\"\
-    \nconfluent_base_path=\"${confluent_secret_root_path}\"\
+    \nconfluent_secret_root_path=\"${confluent_secret_root_path}\"\
     \nday_count=${day_count}" > terraform.tfvars
 else
     printf "aws_region=\"${AWS_REGION}\"\
@@ -137,8 +137,8 @@ else
     terraform destroy -var-file=terraform.tfvars
 
     # Force the delete of the AWS Secrets
-    aws secretsmanager delete-secret --secret-id ${confluent_base_path}/schema_registry_cluster/python_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_base_path}/kafka_cluster/app_manager/python_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_base_path}/kafka_cluster/app_consumer/python_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_base_path}/kafka_cluster/app_producer/python_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/schema_registry_cluster/python_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_manager/python_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_consumer/python_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_producer/python_client --force-delete-without-recovery || true
 fi
