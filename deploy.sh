@@ -9,6 +9,38 @@
 #
 #
 
+set -euo pipefail  # Stop on error, undefined variables, and pipeline errors
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_step() {
+    echo -e "${BLUE}[STEP]${NC} $1"
+}
+
+# Configuration folders
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TERRAFORM_DIR="$SCRIPT_DIR/terraform"
+
+print_info "Terraform Directory: $TERRAFORM_DIR"
+
 # Check required command (create or delete) was supplied
 case $1 in
   create)
@@ -97,12 +129,24 @@ aws sso login $AWS_PROFILE
 eval $(aws2-wrap $AWS_PROFILE --export)
 export AWS_REGION=$(aws configure get region $AWS_PROFILE)
 
+# Function to check if Terraform is initialized
+check_terraform_init() {
+    if [ ! -d "$TERRAFORM_DIR/.terraform" ]; then
+        return 1
+    fi
+    return 0
+}
+
 # Confluent Root Path
 confluent_secret_root_path=/confluent_cloud_resource/cc_cluster_linking_demo
 
-# Create terraform.tfvars file
-if [ "$create_action" = true ]
-then
+# Function to deploy infrastructure
+deploy_infrastructure() {
+    print_step "Deploying infrastructure with Terraform..."
+    
+    cd "$TERRAFORM_DIR"
+    
+    # Create terraform.tfvars file
     printf "aws_region=\"${AWS_REGION}\"\
     \naws_access_key_id=\"${AWS_ACCESS_KEY_ID}\"\
     \naws_secret_access_key=\"${AWS_SECRET_ACCESS_KEY}\"\
@@ -111,7 +155,47 @@ then
     \nconfluent_api_secret=\"${confluent_api_secret}\"\
     \nconfluent_secret_root_path=\"${confluent_secret_root_path}\"\
     \nday_count=${day_count}" > terraform.tfvars
-else
+    
+    # Initialize Terraform if needed
+    if ! check_terraform_init; then
+        print_info "Initializing Terraform..."
+        terraform init
+    fi
+    
+    # Plan
+    print_info "Running Terraform plan..."
+    terraform plan -out=tfplan
+    
+    # Apply
+    read -p "Do you want to apply this plan? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Applying Terraform plan..."
+        terraform apply tfplan
+        rm tfplan
+        print_info "Infrastructure deployed successfully!"
+        cd ..
+        return 0
+    else
+        print_warn "Deployment cancelled"
+        rm tfplan
+        return 1
+    fi
+}
+
+# Function to undeploy infrastructure
+undeploy_infrastructure() {
+    print_step "Destroying infrastructure with Terraform..."
+
+    cd "$TERRAFORM_DIR"
+    
+    # Initialize Terraform if needed
+    if ! check_terraform_init; then
+        print_info "Initializing Terraform..."
+        terraform init
+    fi
+    
+    # Create terraform.tfvars file
     printf "aws_region=\"${AWS_REGION}\"\
     \naws_access_key_id=\"${AWS_ACCESS_KEY_ID}\"\
     \naws_secret_access_key=\"${AWS_SECRET_ACCESS_KEY}\"\
@@ -119,29 +203,35 @@ else
     \nconfluent_api_key=\"${confluent_api_key}\"\
     \nconfluent_api_secret=\"${confluent_api_secret}\"\
     \nconfluent_secret_root_path=\"${confluent_secret_root_path}\"" > terraform.tfvars
-fi
 
-# Initialize the Terraform configuration
-terraform init
-
-if [ "$create_action" = true ]
-then
-    # Create/Update the Terraform configuration
-    terraform init
-    terraform plan -var-file=terraform.tfvars
-
-    # Apply the Terraform configuration
-    terraform apply -var-file=terraform.tfvars
-else
-    # Destroy the Terraform configuration
-    terraform destroy -var-file=terraform.tfvars
+    # Destroy
+    print_info "Running Terraform destroy..."
+    terraform destroy -auto-approve
 
     # Force the delete of the AWS Secrets
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/schema_registry_cluster/python_client --force-delete-without-recovery || true
+    print_info "Deleting AWS Secrets..."
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/schema_registry_cluster --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_manager/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_consumer/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_producer/java_client --force-delete-without-recovery || true
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_manager/python_client --force-delete-without-recovery || true
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_consumer/python_client --force-delete-without-recovery || true
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_producer/python_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_manager/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_consumer/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_producer/java_client --force-delete-without-recovery || truea
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_manager/python_client --force-delete-without-recovery || true
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_consumer/python_client --force-delete-without-recovery || true
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_producer/python_client --force-delete-without-recovery || true
+    
+    print_info "Infrastructure destroyed successfully!"
+}   
+
+# Main execution flow
+if [ "$create_action" = true ]
+then
+    deploy_infrastructure
+else
+    undeploy_infrastructure
+    exit 0
 fi
