@@ -21,6 +21,7 @@ Icon
 .com.apple.timemachine.donotpresent
 .AppleDB
 .AppleDesktop
+scratch.pad
 
 # ==========================================
 # Terraform
@@ -100,7 +101,3 @@ id_ed25519.pub
 # ==========================================
 .github/secrets/
 
-# ==========================================
-# Miscellaneous
-# ==========================================
-scratch.pad
