@@ -4,8 +4,17 @@ resource "confluent_kafka_cluster" "destination" {
   availability = "SINGLE_ZONE"
   cloud        = local.cloud
   region       = var.aws_region
-  standard     {}
+  enterprise   {}
 
+  environment {
+    id = confluent_environment.cluster_linking_demo.id
+  }
+}
+
+resource "confluent_private_link_attachment" "destination" {
+  display_name = "aws-privatelink-gateway"
+  cloud        = local.cloud
+  region       = var.aws_region
   environment {
     id = confluent_environment.cluster_linking_demo.id
   }
