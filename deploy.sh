@@ -2,10 +2,10 @@
 
 #
 # *** Script Syntax ***
-# ./deploy.sh=<create | delete> --profile=<SSO_PROFILE_NAME>
-#                               --confluent-api-key=<CONFLUENT_API_KEY>
-#                               --confluent-api-secret=<CONFLUENT_API_SECRET>
-#                               [--day-count=<DAY_COUNT>]
+# ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
+#                                --confluent-api-key=<CONFLUENT_API_KEY>
+#                                --confluent-api-secret=<CONFLUENT_API_SECRET>
+#                                [--day-count=<DAY_COUNT>]
 #
 #
 
@@ -41,17 +41,17 @@ TERRAFORM_DIR="$SCRIPT_DIR/terraform"
 
 print_info "Terraform Directory: $TERRAFORM_DIR"
 
-# Check required command (create or delete) was supplied
+# Check required command (create or destroy) was supplied
 case $1 in
   create)
     create_action=true;;
-  delete)
+  destroy)
     create_action=false;;
   *)
     echo
-    echo "(Error Message 001)  You did not specify one of the commands: create | delete."
+    echo "(Error Message 001)  You did not specify one of the commands: create | destroy."
     echo
-    echo "Usage:  Require all five arguments ---> `basename $0`=<create | delete> --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET>"
+    echo "Usage:  Require all five arguments ---> `basename $0`=<create | destroy> --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
     ;;
