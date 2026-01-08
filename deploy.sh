@@ -189,7 +189,7 @@ eval $(aws2-wrap $AWS_PROFILE --export)
 export AWS_REGION=$(aws configure get region $AWS_PROFILE)
 
 # Confluent Root Path
-confluent_secret_root_path=/confluent_cloud_resource/cc_cluster_linking_demo
+confluent_secret_root_path=/confluent_cloud_resource/cc_cluster_linking_privatelink_iac_demo
 
 # Function to deploy infrastructure
 deploy_infrastructure() {
