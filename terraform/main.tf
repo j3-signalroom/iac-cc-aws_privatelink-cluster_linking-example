@@ -5,9 +5,9 @@ terraform {
         workspaces {
             name = "cc-cluster-linking-iac-demo"
         }
-  }
+    }
 
-  required_providers {
+    required_providers {
         aws = {
             source  = "hashicorp/aws"
             version = "6.27.0"
