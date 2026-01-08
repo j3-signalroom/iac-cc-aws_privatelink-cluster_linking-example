@@ -5,8 +5,8 @@
 # ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
 #                                --confluent-api-key=<CONFLUENT_API_KEY>
 #                                --confluent-api-secret=<CONFLUENT_API_SECRET>
-#                                --vpc-id=<VPC_ID>
-#                                --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK>
+#                                --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID>
+#                                --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>
 #                                [--day-count=<DAY_COUNT>]
 #
 #
@@ -63,8 +63,10 @@ esac
 AWS_PROFILE=""
 confluent_api_key=""
 confluent_api_secret=""
-vpc_id=""
-subnets_to_privatelink=""
+sandbox_cluster_vpc_id=""
+sandbox_cluster_subnets_to_privatelink=""
+shared_cluster_vpc_id=""
+shared_cluster_subnets_to_privatelink=""
 
 # Default optional variable(s)
 day_count=30
@@ -83,12 +85,18 @@ do
         *"--confluent-api-secret="*)
             arg_length=23
             confluent_api_secret=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--vpc-id="*)
-            arg_length=9
-            vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--subnets-to-privatelink="*)
+        *"--sandbox-cluster-vpc-id="*)
             arg_length=25
-            subnets_to_privatelink=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+            sandbox_cluster_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--sandbox-cluster-subnets-to-privatelink="*)
+            arg_length=36
+            sandbox_cluster_subnets_to_privatelink=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--shared-cluster-vpc-id="*)
+            arg_length=24
+            shared_cluster_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--shared-cluster-subnets-to-privatelink="*)
+            arg_length=35
+            shared_cluster_subnets_to_privatelink=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--day-count="*)
             arg_length=12
             day_count=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
@@ -101,7 +109,7 @@ then
     echo
     echo "(Error Message 002)  You did not include the proper use of the -- profile=<SSO_PROFILE_NAME> argument in the call."
     echo
-    echo "Usage:  Require all five arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET>"
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -111,8 +119,8 @@ if [ -z "$confluent_api_key" ]
 then
     echo
     echo "(Error Message 003)  You did not include the proper use of the --confluent-api-key=<CONFLUENT_API_KEY> argument in the call."
-    echo 
-    echo "Usage:  Require all five arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --vpc-id=<VPC_ID> --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK>"
+    echo
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -123,30 +131,51 @@ then
     echo
     echo "(Error Message 004)  You did not include the proper use of the --confluent-api-secret=<CONFLUENT_API_SECRET> argument in the call."
     echo
-    echo "Usage:  Require all five arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --vpc-id=<VPC_ID> --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK>"
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
 
-# Check required --vpc-id argument was supplied
-if [ -z "$vpc_id" ]
+# Check required --sandbox-cluster-vpc-id argument was supplied
+if [ -z "$sandbox_cluster_vpc_id" ]
 then
     echo
-    echo "(Error Message 005)  You did not include the proper use of the --vpc-id=<VPC_ID> argument in the call."
-    echo "$vpc_id"
+    echo "(Error Message 005)  You did not include the proper use of the --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> argument in the call."
     echo
-    echo "Usage:  Require all five arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --vpc-id=<VPC_ID> --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK>"
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
 
-# Check required --subnets-to-privatelink argument was supplied
-if [ -z "$subnets_to_privatelink" ]
+# Check required --sandbox-cluster-subnets-to-privatelink argument was supplied
+if [ -z "$sandbox_cluster_subnets_to_privatelink" ]
 then
     echo
-    echo "(Error Message 006)  You did not include the proper use of the --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK> argument in the call."
+    echo "(Error Message 006)  You did not include the proper use of the --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> argument in the call."
     echo
-    echo "Usage:  Create command require all five arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --vpc-id=<VPC_ID> --subnets-to-privatelink=<SUBNETS_TO_PRIVATELINK>"
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --shared-cluster-vpc-id argument was supplied
+if [ -z "$shared_cluster_vpc_id" ]
+then
+    echo
+    echo "(Error Message 007)  You did not include the proper use of the --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> argument in the call."
+    echo
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --shared-cluster-subnets-to-privatelink argument was supplied
+if [ -z "$shared_cluster_subnets_to_privatelink" ]
+then
+    echo
+    echo "(Error Message 008)  You did not include the proper use of the --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK> argument in the call."
+    echo
+    echo "Usage:  Require all seven arguments ---> `basename $0 $1` --profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> --sandbox-cluster-subnets-to-privatelink=<SANDBOX_CLUSTER_SUBNETS_TO_PRIVATELINK> --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> --shared-cluster-subnets-to-privatelink=<SHARED_CLUSTER_SUBNETS_TO_PRIVATELINK>"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -175,8 +204,10 @@ deploy_infrastructure() {
     export TF_VAR_confluent_api_secret="${confluent_api_secret}"
     export TF_VAR_confluent_secret_root_path="${confluent_secret_root_path}"
     export TF_VAR_day_count="${day_count}"
-    export TF_VAR_vpc_id="${vpc_id}"
-    export TF_VAR_subnets_to_privatelink="${subnets_to_privatelink}"
+    export TF_VAR_sandbox_cluster_vpc_id="${sandbox_cluster_vpc_id}"
+    export TF_VAR_sandbox_cluster_subnets_to_privatelink="${sandbox_cluster_subnets_to_privatelink}"
+    export TF_VAR_shared_cluster_vpc_id="${shared_cluster_vpc_id}"
+    export TF_VAR_shared_cluster_subnets_to_privatelink="${shared_cluster_subnets_to_privatelink}"
 
     # Initialize Terraform if needed
     print_info "Initializing Terraform..."
@@ -223,8 +254,10 @@ undeploy_infrastructure() {
     export TF_VAR_confluent_api_key="${confluent_api_key}"
     export TF_VAR_confluent_api_secret="${confluent_api_secret}"
     export TF_VAR_confluent_secret_root_path="${confluent_secret_root_path}"
-    export TF_VAR_vpc_id="${vpc_id}"
-    export TF_VAR_subnets_to_privatelink="${subnets_to_privatelink}"
+    export TF_VAR_sandbox_cluster_vpc_id="${sandbox_cluster_vpc_id}"
+    export TF_VAR_sandbox_cluster_subnets_to_privatelink="${sandbox_cluster_subnets_to_privatelink}"
+    export TF_VAR_shared_cluster_vpc_id="${shared_cluster_vpc_id}"
+    export TF_VAR_shared_cluster_subnets_to_privatelink="${shared_cluster_subnets_to_privatelink}"
 
     # Destroy
     print_info "Running Terraform destroy..."
@@ -233,11 +266,11 @@ undeploy_infrastructure() {
     # Force the delete of the AWS Secrets
     print_info "Deleting AWS Secrets..."
     aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/schema_registry_cluster --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_manager/java_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_consumer/java_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/source_cluster/app_producer/java_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_manager/java_client --force-delete-without-recovery || true
-    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/destination_cluster/app_consumer/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/sandbox_cluster/app_manager/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/sandbox_cluster/app_consumer/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/sandbox_cluster/app_producer/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/shared_cluster/app_manager/java_client --force-delete-without-recovery || true
+    aws secretsmanager delete-secret --secret-id ${confluent_secret_root_path}/shared_cluster/app_consumer/java_client --force-delete-without-recovery || true
     
     print_info "Infrastructure destroyed successfully!"
     cd ..
