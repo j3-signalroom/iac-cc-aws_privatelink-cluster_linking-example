@@ -60,7 +60,6 @@ module "kafka_destination_app_manager_api_key" {
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
 
-
   depends_on = [
     confluent_role_binding.destination_app_manager_kafka_cluster_admin,
     confluent_private_link_attachment_connection.cluster_linking_demo
