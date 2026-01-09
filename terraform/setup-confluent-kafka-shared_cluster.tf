@@ -17,7 +17,7 @@ resource "time_sleep" "wait_for_shared_dns" {
     confluent_private_link_attachment_connection.shared_cluster,
     confluent_kafka_cluster.shared_cluster
   ]
-  create_duration = "180s"
+  create_duration = "5m"
 }
 
 resource "confluent_service_account" "shared_cluster_app_manager" {

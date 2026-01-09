@@ -25,6 +25,8 @@ resource "confluent_cluster_link" "sandbox-to-shared" {
     time_sleep.wait_for_sandbox_dns,
     confluent_kafka_cluster.shared_cluster,
     module.kafka_shared_cluster_app_manager_api_key.active_api_key,
-    time_sleep.wait_for_shared_dns
+    time_sleep.wait_for_shared_dns,
+    aws_route53_zone_association.sandbox_to_agent,
+    aws_route53_zone_association.shared_to_agent
   ]
 }

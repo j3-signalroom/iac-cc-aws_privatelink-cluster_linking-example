@@ -17,7 +17,7 @@ resource "time_sleep" "wait_for_sandbox_dns" {
     confluent_private_link_attachment_connection.sandbox_cluster,
     confluent_kafka_cluster.sandbox_cluster
   ]
-  create_duration = "180s"
+  create_duration = "5m"
 }
 
 # 'sandbox_cluster_app_manager' service account is required in this configuration to create 'stock_trades' topic and grant ACLs
