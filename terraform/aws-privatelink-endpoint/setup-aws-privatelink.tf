@@ -1,36 +1,43 @@
+locals {
+  network_id = split(".", var.dns_domain)[0]
+}
+
 resource "aws_security_group" "privatelink" {
-  # Ensure that SG is unique, so that this module can be used multiple times within a single VPC
-  name = "ccloud-privatelink_${local.network_id}_${var.vpc_id}"
-  description = "Confluent Cloud Private Link minimal security group for ${var.dns_domain} in ${var.vpc_id}"
+  name = "ccloud-privatelink_${local.network_id}_${var.vpc_id_to_privatelink}"
+  description = "Confluent Cloud Private Link minimal security group for ${var.dns_domain} in ${var.vpc_id_to_privatelink}"
   vpc_id = data.aws_vpc.privatelink.id
 
   ingress {
-    # only necessary if redirect support from http/https is desired
+    # Optional HTTP→HTTPS redirects
     from_port = 80
     to_port = 80
     protocol = "tcp"
-    cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    cidr_blocks = [data.aws_vpc.privatelink.cidr_block] # Restricted to VPC CIDR block only
   }
 
   ingress {
+    # REST APIs (Schema Registry, Connect, ksqlDB, Cluster Linking)
     from_port = 443
     to_port = 443
     protocol = "tcp"
-    cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    cidr_blocks = [data.aws_vpc.privatelink.cidr_block] # Restricted to VPC CIDR block only
   }
 
   ingress {
+    # Kafka broker connections
     from_port = 9092
     to_port = 9092
     protocol = "tcp"
-    cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    cidr_blocks = [data.aws_vpc.privatelink.cidr_block] # Restricted to VPC CIDR block only
   }
 
   lifecycle {
+    # For zero-downtime updates
     create_before_destroy = true
   }
 }
 
+# Creates one ENI per subnet for zone-aware routing, which is critical for Confluent Cloud's multi-AZ broker placement
 resource "aws_vpc_endpoint" "privatelink" {
   vpc_id = data.aws_vpc.privatelink.id
   service_name = var.privatelink_service_name
@@ -40,10 +47,11 @@ resource "aws_vpc_endpoint" "privatelink" {
     aws_security_group.privatelink.id,
   ]
 
-  subnet_ids = [for zone, subnet_id in var.subnets_to_privatelink: subnet_id]
+  subnet_ids = [for zone, subnet_id in data.aws_subnets.subnets_to_privatelink.ids: subnet_id]
   private_dns_enabled = false
 }
 
+# This zone overrides public DNS for all *.dns_domain lookups within associated VPCs
 resource "aws_route53_zone" "privatelink" {
   name = var.dns_domain
 
@@ -52,8 +60,15 @@ resource "aws_route53_zone" "privatelink" {
   }
 }
 
+locals {
+  # List of AZs where PrivateLink subnets exist
+  private_subnet_azs = [for s in data.aws_subnets.subnets_to_privatelink.ids : 
+                         data.aws_subnet.subnets_to_privatelink[s].availability_zone]
+}
+
+# Creates wildcard CNAME record for single-AZ PrivateLink endpoints
 resource "aws_route53_record" "privatelink" {
-  count = length(var.subnets_to_privatelink) == 1 ? 0 : 1
+  count = length(data.aws_subnets.subnets_to_privatelink.ids) == 1 ? 0 : 1
   zone_id = aws_route53_zone.privatelink.zone_id
   name = "*.${aws_route53_zone.privatelink.name}"
   type = "CNAME"
@@ -64,14 +79,16 @@ resource "aws_route53_record" "privatelink" {
 }
 
 locals {
+  # Extracts prefix from PrivateLink DNS entry for constructing zonal records
   endpoint_prefix = split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0]
 }
 
+# Creates wildcard CNAME records per AZ for multi-AZ PrivateLink endpoints
 resource "aws_route53_record" "privatelink-zonal" {
-  for_each = var.subnets_to_privatelink
+  for_each = toset(data.aws_subnets.subnets_to_privatelink.ids)
 
   zone_id = aws_route53_zone.privatelink.zone_id
-  name = length(var.subnets_to_privatelink) == 1 ? "*" : "*.${each.key}"
+  name = length(data.aws_subnets.subnets_to_privatelink.ids) == 1 ? "*" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}"
   type = "CNAME"
   ttl  = "60"
   records = [
@@ -81,4 +98,19 @@ resource "aws_route53_record" "privatelink-zonal" {
       replace(aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"], local.endpoint_prefix, "")
     )
   ]
+}
+
+# Associate VPC associated with privatelink Route 53 Private Hosted Zone with TFC Agent VPC
+resource "aws_route53_zone_association" "privatelink_to_vpc_to_agent" {
+  zone_id = aws_route53_zone.privatelink.zone_id
+  vpc_id  = var.tfc_agent_vpc_id
+}
+
+# Wait for DNS association to propagate
+resource "time_sleep" "wait_for_zone_associations" {
+  depends_on = [
+    aws_route53_zone_association.privatelink_to_vpc_to_agent
+  ]
+
+  create_duration = "2m"
 }
