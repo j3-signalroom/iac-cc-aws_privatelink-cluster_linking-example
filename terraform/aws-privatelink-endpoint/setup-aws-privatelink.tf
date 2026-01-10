@@ -61,49 +61,39 @@ resource "aws_route53_zone" "privatelink" {
 }
 
 # Creates wildcard CNAME record for multi-AZ PrivateLink endpoints
+# Only creates if: 1) Multiple subnets exist, AND 2) VPC endpoint DNS is available
 resource "aws_route53_record" "privatelink" {
-  count = length(data.aws_subnets.subnets_to_privatelink.ids) == 1 ? 0 : 1
-  
-  depends_on = [aws_vpc_endpoint.privatelink]
+  count = length(data.aws_subnets.subnets_to_privatelink.ids) > 1 && length(aws_vpc_endpoint.privatelink.dns_entry) > 0 ? 1 : 0
   
   zone_id = aws_route53_zone.privatelink.zone_id
   name = "*.${aws_route53_zone.privatelink.name}"
   type = "CNAME"
   ttl  = "60"
   records = [
-    try(aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"], "")
+    aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]
   ]
-  
-  lifecycle {
-    ignore_changes = [records]
-  }
 }
 
 # Creates wildcard CNAME records per AZ for multi-AZ PrivateLink endpoints
+# Only creates if VPC endpoint DNS is available
 resource "aws_route53_record" "privatelink-zonal" {
-  for_each = toset(data.aws_subnets.subnets_to_privatelink.ids)
+  for_each = length(aws_vpc_endpoint.privatelink.dns_entry) > 0 ? toset(data.aws_subnets.subnets_to_privatelink.ids) : []
   
-  depends_on = [aws_vpc_endpoint.privatelink]
-
   zone_id = aws_route53_zone.privatelink.zone_id
   name = length(data.aws_subnets.subnets_to_privatelink.ids) == 1 ? "*" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}"
   type = "CNAME"
   ttl  = "60"
   records = [
     format("%s-%s%s",
-      try(split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0], "vpce-temp"),
+      split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
       data.aws_availability_zone.privatelink[each.key].name,
-      try(replace(
+      replace(
         aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"], 
         split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0], 
         ""
-      ), ".vpce-svc-temp.us-east-1.vpce.amazonaws.com")
+      )
     )
   ]
-  
-  lifecycle {
-    ignore_changes = [records]
-  }
 }
 
 # Associate VPC associated with privatelink Route 53 Private Hosted Zone with TFC Agent VPC
