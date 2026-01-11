@@ -1,10 +1,7 @@
-locals {
-  network_id = split(".", var.dns_domain)[0]
-}
-
+# Security Group for VPC Endpoint
 resource "aws_security_group" "privatelink" {
   name        = "ccloud-privatelink_${local.network_id}_${var.vpc_id_to_privatelink}"
-  description = "Confluent Cloud Private Link minimal security group for ${var.dns_domain} in ${var.vpc_id_to_privatelink}"
+  description = "Confluent Cloud Private Link security group for ${var.dns_domain}"
   vpc_id      = data.aws_vpc.privatelink.id
 
   ingress {
@@ -12,6 +9,7 @@ resource "aws_security_group" "privatelink" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    description = "HTTP from VPC"
   }
 
   ingress {
@@ -19,6 +17,7 @@ resource "aws_security_group" "privatelink" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    description = "HTTPS from VPC"
   }
 
   ingress {
@@ -26,13 +25,29 @@ resource "aws_security_group" "privatelink" {
     to_port     = 9092
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.privatelink.cidr_block]
+    description = "Kafka from VPC"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound"
   }
 
   lifecycle {
     create_before_destroy = true
   }
+  
+  tags = {
+    Name        = "ccloud-privatelink-${local.network_id}"
+    VPC         = var.vpc_id_to_privatelink
+    Environment = "non-prod"
+  }
 }
 
+# VPC Endpoint
 resource "aws_vpc_endpoint" "privatelink" {
   vpc_id              = data.aws_vpc.privatelink.id
   service_name        = var.privatelink_service_name
@@ -40,52 +55,19 @@ resource "aws_vpc_endpoint" "privatelink" {
   security_group_ids  = [aws_security_group.privatelink.id]
   private_dns_enabled = false
   
-  # Use selected subnet IDs (one per unique AZ)
-  subnet_ids = local.selected_subnet_ids
-}
-
-resource "aws_route53_zone" "privatelink" {
-  name = var.dns_domain
-
-  vpc {
-    vpc_id = data.aws_vpc.privatelink.id
+  subnet_ids = var.subnet_ids
+  
+  tags = {
+    Name        = "ccloud-privatelink-${local.network_id}"
+    VPC         = var.vpc_id_to_privatelink
+    Domain      = var.dns_domain
+    Environment = "non-prod"
   }
 }
 
-# Global wildcard CNAME (only for multi-AZ deployments)
-resource "aws_route53_record" "privatelink" {
-  count = length(local.selected_subnet_ids) > 1 ? 1 : 0
-  
-  zone_id = aws_route53_zone.privatelink.zone_id
-  name    = "*.${aws_route53_zone.privatelink.name}"
-  type    = "CNAME"
-  ttl     = 60
-  records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
-}
-
-# Zonal CNAME records (one per selected subnet/AZ)
-resource "aws_route53_record" "privatelink-zonal" {
-  for_each = toset(local.selected_subnet_ids)
-  
-  zone_id = aws_route53_zone.privatelink.zone_id
-  name    = length(local.selected_subnet_ids) == 1 ? "*" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}"
-  type    = "CNAME"
-  ttl     = 60
-  records = [
-    format("%s-%s%s",
-      split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
-      data.aws_availability_zone.privatelink[each.key].name,
-      replace(
-        aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"], 
-        split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0], 
-        ""
-      )
-    )
-  ]
-}
-
-# Route53 Private Hosted Zone for VPC
-resource "aws_route53_zone" "phz" {
+# Route53 Private Hosted Zone
+# CRITICAL: Zone name must exactly match Confluent DNS domain
+resource "aws_route53_zone" "privatelink" {
   name = var.dns_domain
   
   vpc {
@@ -95,16 +77,64 @@ resource "aws_route53_zone" "phz" {
   tags = {
     Name        = "phz-${local.network_id}-${var.vpc_id_to_privatelink}"
     VPC         = var.vpc_id_to_privatelink
+    Domain      = var.dns_domain
+    Environment = "non-prod"
   }
 }
 
-
-resource "aws_route53_zone_association" "privatelink_to_vpc_to_agent" {
+# Global wildcard CNAME (for multi-AZ deployments)
+resource "aws_route53_record" "privatelink_wildcard" {
+  count = length(var.subnet_ids) > 1 ? 1 : 0
+  
   zone_id = aws_route53_zone.privatelink.zone_id
-  vpc_id  = var.tfc_agent_vpc_id
+  name    = "*.${var.dns_domain}"
+  type    = "CNAME"
+  ttl     = 60
+  records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
 }
 
+# Zonal CNAME records (one per subnet/AZ)
+resource "aws_route53_record" "privatelink_zonal" {
+  for_each = toset(var.subnet_ids)
+  
+  zone_id = aws_route53_zone.privatelink.zone_id
+  name    = length(var.subnet_ids) == 1 ? "*.${var.dns_domain}" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}.${var.dns_domain}"
+  type    = "CNAME"
+  ttl     = 60
+  
+  records = [
+    format("%s-%s%s",
+      split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
+      data.aws_availability_zone.privatelink[each.key].name,
+      replace(
+        aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"],
+        split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
+        ""
+      )
+    )
+  ]
+}
+
+# TFC Agent Association (conditional to prevent conflicts)
+# Only ONE module per environment should set associate_with_tfc_agent_vpc = true
+resource "aws_route53_zone_association" "privatelink_to_tfc_agent" {
+  count = var.associate_with_tfc_agent_vpc && var.tfc_agent_vpc_id != null && var.tfc_agent_vpc_id != var.vpc_id_to_privatelink ? 1 : 0
+  
+  zone_id = aws_route53_zone.privatelink.zone_id
+  vpc_id  = var.tfc_agent_vpc_id
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Wait for DNS propagation
 resource "time_sleep" "wait_for_zone_associations" {
-  depends_on      = [aws_route53_zone_association.privatelink_to_vpc_to_agent]
+  depends_on = [
+    aws_route53_zone_association.privatelink_to_tfc_agent,
+    aws_route53_record.privatelink_wildcard,
+    aws_route53_record.privatelink_zonal
+  ]
+  
   create_duration = "2m"
 }
