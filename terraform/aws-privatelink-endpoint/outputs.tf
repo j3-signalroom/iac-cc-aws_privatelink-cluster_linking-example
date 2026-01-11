@@ -1,26 +1,42 @@
+# aws-privatelink-endpoint/outputs.tf
+# PRODUCTION VERSION - Manual Subnet IDs
+
 output "vpc_endpoint_id" {
-  description = "The ID of the VPC endpoint which provisions the PrivateLink connection"
+  description = "VPC Endpoint ID"
   value       = aws_vpc_endpoint.privatelink.id
 }
 
+output "vpc_endpoint_dns_name" {
+  description = "VPC Endpoint primary DNS name"
+  value       = aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]
+}
+
 output "route53_zone_id" {
-  description = "The ID of the Route 53 Private Hosted Zone created for PrivateLink DNS"
+  description = "Route53 Private Hosted Zone ID"
   value       = aws_route53_zone.privatelink.zone_id
 }
 
 output "route53_zone_name" {
-  description = "The name of the Route 53 Private Hosted Zone created for PrivateLink DNS"
+  description = "Route53 Private Hosted Zone name"
   value       = aws_route53_zone.privatelink.name
 }
 
-output "dns_records" {
-  description = "All DNS records created in the zone"
-  value = merge(
-    length(aws_route53_record.privatelink) > 0 ? {
-      "global" = aws_route53_record.privatelink[0].name
-    } : {},
-    {
-      for k, v in aws_route53_record.privatelink-zonal : k => v.name
-    }
-  )
+output "subnet_ids" {
+  description = "Subnet IDs used for the VPC endpoint"
+  value       = var.subnet_ids
+}
+
+output "availability_zones" {
+  description = "Availability zones where VPC endpoint is deployed"
+  value       = [for id in var.subnet_ids : data.aws_availability_zone.privatelink[id].name]
+}
+
+output "security_group_id" {
+  description = "Security group ID attached to the VPC endpoint"
+  value       = aws_security_group.privatelink.id
+}
+
+output "tfc_agent_association_created" {
+  description = "Whether TFC Agent VPC association was created"
+  value       = var.associate_with_tfc_agent_vpc && var.tfc_agent_vpc_id != null && var.tfc_agent_vpc_id != var.vpc_id_to_privatelink
 }

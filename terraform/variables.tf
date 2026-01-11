@@ -63,9 +63,19 @@ variable "sandbox_cluster_vpc_id_to_privatelink" {
   type        = string
 }
 
+variable "sandbox_cluster_subnet_ids" {
+  description = "The Subnet IDs used for the PrivateLink endpoint for the Sandbox Kafka Cluster."
+  type        = list(string)
+}
+
 variable "shared_cluster_vpc_id_to_privatelink" {
   description = "The VPC ID used for the PrivateLink endpoint for the Shared Kafka Cluster."
   type        = string
+}
+
+variable "shared_cluster_subnet_ids" {
+  description = "The Subnet IDs used for the PrivateLink endpoint for the Shared Kafka Cluster."
+  type        = list(string)
 }
 
 variable "tfc_agent_vpc_id" {
