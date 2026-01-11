@@ -9,7 +9,7 @@ variable "privatelink_service_name" {
 }
 
 variable "dns_domain" {
-  description = "Confluent domain (e.g., plkxyz.us-east-1.aws.confluent.cloud)"
+  description = "Confluent domain (e.g., us-east-1.aws.confluent.cloud)"
   type        = string
 }
 

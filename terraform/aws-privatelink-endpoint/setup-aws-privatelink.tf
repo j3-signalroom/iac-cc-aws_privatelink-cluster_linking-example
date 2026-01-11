@@ -84,6 +84,21 @@ resource "aws_route53_record" "privatelink-zonal" {
   ]
 }
 
+# Route53 Private Hosted Zone for VPC
+resource "aws_route53_zone" "phz" {
+  name = var.dns_domain
+  
+  vpc {
+    vpc_id = var.vpc_id_to_privatelink
+  }
+  
+  tags = {
+    Name        = "phz-${local.network_id}-${var.vpc_id_to_privatelink}"
+    VPC         = var.vpc_id_to_privatelink
+  }
+}
+
+
 resource "aws_route53_zone_association" "privatelink_to_vpc_to_agent" {
   zone_id = aws_route53_zone.privatelink.zone_id
   vpc_id  = var.tfc_agent_vpc_id
