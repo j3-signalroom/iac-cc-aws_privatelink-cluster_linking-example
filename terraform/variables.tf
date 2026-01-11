@@ -58,27 +58,17 @@ variable "confluent_secret_root_path" {
     type        = string
 }
 
-variable "sandbox_cluster_vpc_id" {
-  description = "The ID of the VPC in which the endpoint will be used."
+variable "sandbox_cluster_vpc_id_to_privatelink" {
+  description = "The VPC ID used for the PrivateLink endpoint for the Sandbox Kafka Cluster."
   type        = string
 }
 
-variable "sandbox_cluster_subnets_to_privatelink" {
-  description = "A map of Zone ID to Subnet ID (i.e.: {\"use1-az1\" = \"subnet-abcdef0123456789a\", ...})"
-  type        = map(string)
-}
-variable "shared_cluster_vpc_id" {
-  description = "The ID of the VPC in which the endpoint will be used."
+variable "shared_cluster_vpc_id_to_privatelink" {
+  description = "The VPC ID used for the PrivateLink endpoint for the Shared Kafka Cluster."
   type        = string
 }
 
-variable "shared_cluster_subnets_to_privatelink" {
-  description = "A map of Zone ID to Subnet ID (i.e.: {\"use1-az1\" = \"subnet-abcdef0123456789a\", ...})"
-  type        = map(string)
-}
-
-variable "tfc_agent_subnet_id" {
-  description = "Subnet ID where the Terraform Cloud Agent is running (e.g., subnet-06c0d7c6a6800c500)"
+variable "tfc_agent_vpc_id" {
+  description = "VPC ID where the Terraform Cloud Agent is running."
   type        = string
-  default     = "subnet-06c0d7c6a6800c500"
 }

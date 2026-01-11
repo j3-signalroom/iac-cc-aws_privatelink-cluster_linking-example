@@ -61,9 +61,6 @@ module "kafka_sandbox_cluster_app_manager_api_key" {
     environment = {
       id = confluent_environment.non_prod.id
     }
-
-    # Add this to skip DNS-dependent validation
-    disable_wait_for_ready = true
   }
 
   confluent_api_key    = var.confluent_api_key
@@ -73,14 +70,12 @@ module "kafka_sandbox_cluster_app_manager_api_key" {
   key_display_name             = "Confluent Kafka Cluster Service Account API Key - {date} - Managed by Terraform Cloud"
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
-  disable_wait_for_ready       = true
 
   depends_on = [
     confluent_role_binding.sandbox_cluster_app_manager_kafka_cluster_admin,
     confluent_private_link_attachment_connection.sandbox_cluster,
     time_sleep.wait_for_sandbox_dns,
-    time_sleep.wait_for_shared_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_shared_dns
   ]
 }
 
@@ -99,8 +94,7 @@ resource "confluent_kafka_topic" "source_stock_trades" {
   depends_on = [ 
     confluent_role_binding.sandbox_cluster_app_manager_kafka_cluster_admin,
     module.kafka_sandbox_cluster_app_manager_api_key,
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -136,12 +130,11 @@ module "kafka_sandbox_cluster_app_consumer_api_key" {
   key_display_name             = "Confluent Kafka Cluster Service Account API Key - {date} - Managed by Terraform Cloud"
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
-  disable_wait_for_ready       = true
+
 
   depends_on = [
     confluent_private_link_attachment_connection.sandbox_cluster,
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -163,8 +156,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_producer_write_on_topic" {
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -200,12 +192,10 @@ module "kafka_sandbox_cluster_app_producer_api_key" {
   key_display_name             = "Confluent Kafka Cluster Service Account API Key - {date} - Managed by Terraform Cloud"
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
-  disable_wait_for_ready       = true
 
   depends_on = [
     confluent_private_link_attachment_connection.sandbox_cluster,
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -228,8 +218,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_consumer_read_on_group" {
 
   depends_on = [
     confluent_private_link_attachment_connection.sandbox_cluster,
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -251,8 +240,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_consumer_read_on_topic" {
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -279,8 +267,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_describe_on_cluste
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -302,8 +289,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_write_on_target_to
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -325,8 +311,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_create_on_data_pre
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 
@@ -348,8 +333,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_write_on_data_prev
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    aws_route53_zone_association.sandbox_to_agent
+    time_sleep.wait_for_sandbox_dns
   ]
 }
 

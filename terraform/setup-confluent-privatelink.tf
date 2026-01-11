@@ -9,10 +9,10 @@ resource "confluent_private_link_attachment" "sandbox_cluster" {
 
 module "sandbox_cluster_privatelink" {
   source                   = "./aws-privatelink-endpoint"
-  vpc_id                   = var.sandbox_cluster_vpc_id
   privatelink_service_name = confluent_private_link_attachment.sandbox_cluster.aws[0].vpc_endpoint_service_name
-  dns_domain               = confluent_private_link_attachment.sandbox_cluster.dns_domain
-  subnets_to_privatelink   = var.sandbox_cluster_subnets_to_privatelink
+  dns_domain               = "${confluent_kafka_cluster.sandbox_cluster.id}.${confluent_private_link_attachment.sandbox_cluster.dns_domain}"
+  vpc_id_to_privatelink    = var.sandbox_cluster_vpc_id_to_privatelink
+  tfc_agent_vpc_id         = var.tfc_agent_vpc_id
 }
 
 resource "confluent_private_link_attachment_connection" "sandbox_cluster" {
@@ -40,10 +40,10 @@ resource "confluent_private_link_attachment" "shared_cluster" {
 
 module "shared_cluster_privatelink" {
   source                   = "./aws-privatelink-endpoint"
-  vpc_id                   = var.shared_cluster_vpc_id
   privatelink_service_name = confluent_private_link_attachment.shared_cluster.aws[0].vpc_endpoint_service_name
-  dns_domain               = confluent_private_link_attachment.shared_cluster.dns_domain
-  subnets_to_privatelink   = var.shared_cluster_subnets_to_privatelink
+  dns_domain               = "${confluent_kafka_cluster.shared_cluster.id}.${confluent_private_link_attachment.shared_cluster.dns_domain}"
+  vpc_id_to_privatelink    = var.shared_cluster_vpc_id_to_privatelink
+  tfc_agent_vpc_id         = var.tfc_agent_vpc_id
 }
 
 resource "confluent_private_link_attachment_connection" "shared_cluster" {
