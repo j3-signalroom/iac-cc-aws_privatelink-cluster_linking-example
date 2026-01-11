@@ -1,6 +1,9 @@
 #!/bin/bash
 
 #
+# *** Purpose ***
+# To deploy or destroy the infrastructure for the Confluent Cloud Cluster Linking over PrivateLink demo.
+#
 # *** Script Syntax ***
 # ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
 #                                --confluent-api-key=<CONFLUENT_API_KEY>

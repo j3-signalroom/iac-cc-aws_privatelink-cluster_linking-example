@@ -45,10 +45,16 @@ resource "aws_vpc_endpoint" "privatelink" {
 }
 
 resource "aws_route53_zone" "privatelink" {
-  name = var.dns_domain
-
+    name = var.dns_domain
+  
   vpc {
-    vpc_id = data.aws_vpc.privatelink.id
+    vpc_id = var.vpc_id_to_privatelink
+  }
+  
+  tags = {
+    Name        = "phz-${local.network_id}-${var.vpc_id_to_privatelink}"
+    VPC         = var.vpc_id_to_privatelink
+    Environment = "non-prod"
   }
 }
 
@@ -57,7 +63,7 @@ resource "aws_route53_record" "privatelink" {
   count = length(local.selected_subnet_ids) > 1 ? 1 : 0
   
   zone_id = aws_route53_zone.privatelink.zone_id
-  name    = "*.${aws_route53_zone.privatelink.name}"
+  name    = "*.${var.dns_domain}"
   type    = "CNAME"
   ttl     = 60
   records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
@@ -85,19 +91,6 @@ resource "aws_route53_record" "privatelink-zonal" {
 }
 
 # Route53 Private Hosted Zone for VPC
-resource "aws_route53_zone" "phz" {
-  name = var.dns_domain
-  
-  vpc {
-    vpc_id = var.vpc_id_to_privatelink
-  }
-  
-  tags = {
-    Name        = "phz-${local.network_id}-${var.vpc_id_to_privatelink}"
-    VPC         = var.vpc_id_to_privatelink
-  }
-}
-
 
 resource "aws_route53_zone_association" "privatelink_to_vpc_to_agent" {
   zone_id = aws_route53_zone.privatelink.zone_id
