@@ -87,3 +87,9 @@ variable "tfc_agent_subnet_ids" {
   description = "Subnet IDs for TFC Agent VPC PrivateLink endpoint (comma-separated)"
   type        = string
 }
+
+variable "tfc_api_token" {
+  description = "Terraform Cloud API Token"
+  type        = string
+  sensitive   = true
+}
