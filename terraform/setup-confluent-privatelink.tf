@@ -26,7 +26,9 @@ module "sandbox_cluster_privatelink" {
   # Client VPN configuration
   client_vpn_vpc_id     = var.client_vpn_vpc_id
   client_vpn_subnet_ids = split(",", var.client_vpn_subnet_ids)
-  client_vpn_cidr       = var.client_vpn_cidr 
+  client_vpn_cidr       = var.client_vpn_cidr
+
+  create_resolver_infrastructure = true
 }
 
 resource "confluent_private_link_attachment_connection" "sandbox_cluster_plattc" {

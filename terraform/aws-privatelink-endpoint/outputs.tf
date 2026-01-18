@@ -37,16 +37,16 @@ output "security_group_id" {
 }
 
 output "inbound_resolver_ips" {
-  description = "IP addresses of the inbound resolver endpoint"
-  value       = aws_route53_resolver_endpoint.inbound.ip_address[*].ip
+  description = "IP addresses of the inbound resolver endpoint (empty if resolver not created)"
+  value       = length(aws_route53_resolver_endpoint.inbound) > 0 ? aws_route53_resolver_endpoint.inbound[0].ip_address[*].ip : []
 }
 
 output "outbound_resolver_id" {
-  description = "ID of the outbound resolver endpoint"
-  value       = aws_route53_resolver_endpoint.outbound.id
+  description = "ID of the outbound resolver endpoint (null if resolver not created)"
+  value       = length(aws_route53_resolver_endpoint.outbound) > 0 ? aws_route53_resolver_endpoint.outbound[0].id : null
 }
 
 output "resolver_rule_id" {
-  description = "ID of the resolver rule"
-  value       = aws_route53_resolver_rule.confluent_cloud.id
+  description = "ID of the resolver rule (null if resolver not created)"
+  value       = length(aws_route53_resolver_rule.confluent_cloud) > 0 ? aws_route53_resolver_rule.confluent_cloud[0].id : null
 }

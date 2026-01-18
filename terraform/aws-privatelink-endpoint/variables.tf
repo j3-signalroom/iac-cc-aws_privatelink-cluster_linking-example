@@ -38,3 +38,9 @@ variable "client_vpn_subnet_ids" {
   description = "List of Client VPN subnet IDs"
   type        = list(string)
 }
+
+variable "create_resolver_infrastructure" {
+  description = "Whether to create Route 53 Resolver endpoints and rules. Only one module should set this to true."
+  type        = bool
+  default     = false
+}
