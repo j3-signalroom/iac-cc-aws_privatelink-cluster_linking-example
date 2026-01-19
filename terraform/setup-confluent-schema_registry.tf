@@ -1,18 +1,14 @@
-# Create the Service Account for the Kafka Cluster API
-resource "confluent_service_account" "schema_registry_cluster_api" {
-    display_name = "cluster_linking_demo_schema_registry_cluster_api"
-    description  = "Sandbox Cluster Sharing Schema Registry Cluster API Service Account"
-}
-
 # Config the environment's schema registry
 data "confluent_schema_registry_cluster" "cluster_linking_demo" {
   environment {
     id = confluent_environment.non_prod.id
   }
+}
 
-  depends_on = [
-    confluent_private_link_attachment.non_prod
-  ]
+# Create the Service Account for the Kafka Cluster API
+resource "confluent_service_account" "schema_registry_cluster_api" {
+    display_name = "cluster_linking_demo_schema_registry_cluster_api"
+    description  = "Sandbox Cluster Sharing Schema Registry Cluster API Service Account"
 }
 
 # Create the Environment API Key Pairs, rotate them in accordance to a time schedule, and provide the current
