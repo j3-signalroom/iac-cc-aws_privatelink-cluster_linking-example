@@ -1,8 +1,21 @@
+# Wait for DNS propagation
+resource "time_sleep" "wait_for_stream_governance" {
+  depends_on = [
+    confluent_environment.non_prod
+  ]
+  
+  create_duration = "1m"
+}
+
 # Config the environment's schema registry
 data "confluent_schema_registry_cluster" "cluster_linking_demo" {
   environment {
     id = confluent_environment.non_prod.id
   }
+
+  depends_on = [
+    time_sleep.wait_for_stream_governance
+  ]
 }
 
 # Create the Service Account for the Kafka Cluster API

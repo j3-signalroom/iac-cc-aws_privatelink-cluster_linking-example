@@ -43,7 +43,7 @@ resource "aws_security_group" "privatelink" {
   tags = {
     Name        = "ccloud-privatelink-${local.network_id}"
     VPC         = var.vpc_id
-    Environment = "${data.confluent_environment.display_name}"
+    Environment = data.confluent_environment.privatelink.display_name
   }
 }
 
@@ -61,7 +61,7 @@ resource "aws_vpc_endpoint" "privatelink" {
     Name        = "ccloud-privatelink-${local.network_id}"
     VPC         = var.vpc_id
     Domain      = var.dns_domain
-    Environment = "${data.confluent_environment.display_name}"
+    Environment = data.confluent_environment.privatelink.display_name
   }
 
   depends_on = [ 
@@ -83,7 +83,7 @@ resource "aws_route53_zone" "privatelink" {
     Name        = "phz-${local.network_id}-${var.vpc_id}"
     VPC         = var.vpc_id
     Domain      = var.dns_domain
-    Environment = "${data.confluent_environment.display_name}"
+    Environment = data.confluent_environment.privatelink.display_name
   }
 }
 
