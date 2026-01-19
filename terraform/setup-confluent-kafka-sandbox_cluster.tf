@@ -11,24 +11,11 @@ resource "confluent_kafka_cluster" "sandbox_cluster" {
   }
 }
 
-resource "time_sleep" "wait_for_sandbox_dns" {
-  depends_on = [
-    module.sandbox_cluster_privatelink,
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    confluent_kafka_cluster.sandbox_cluster
-  ]
-  create_duration = "3m"
-}
-
 # 'sandbox_cluster_app_manager' service account is required in this configuration to create 'stock_trades' topic and grant ACLs
 # to 'sandbox_cluster_app_producer' and 'sandbox_cluster_app_consumer' service accounts.
 resource "confluent_service_account" "sandbox_cluster_app_manager" {
   display_name = "sandbox_cluster_app_manager"
   description  = "Cluster Linking Demo Service account to manage Kafka cluster source"
-
-  depends_on = [ 
-    confluent_kafka_cluster.sandbox_cluster 
-  ]
 }
 
 resource "confluent_role_binding" "sandbox_cluster_app_manager_kafka_cluster_admin" {
@@ -69,9 +56,8 @@ module "kafka_sandbox_cluster_app_manager_api_key" {
   day_count                    = var.day_count
 
   depends_on = [
-    confluent_role_binding.sandbox_cluster_app_manager_kafka_cluster_admin,
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    time_sleep.wait_for_sandbox_dns,
+    confluent_kafka_cluster.sandbox_cluster,
+    module.sandbox_cluster_privatelink
   ]
 }
 
@@ -88,9 +74,7 @@ resource "confluent_kafka_topic" "source_stock_trades" {
   }
 
   depends_on = [ 
-    confluent_role_binding.sandbox_cluster_app_manager_kafka_cluster_admin,
-    module.kafka_sandbox_cluster_app_manager_api_key,
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -125,8 +109,8 @@ module "kafka_sandbox_cluster_app_consumer_api_key" {
   day_count                    = var.day_count
 
   depends_on = [
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    time_sleep.wait_for_sandbox_dns
+    confluent_kafka_cluster.sandbox_cluster,
+    module.sandbox_cluster_privatelink
   ]
 }
 
@@ -154,7 +138,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_producer_prefix_acls" {
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_consumer_api_key
   ]
 }
 
@@ -189,8 +173,8 @@ module "kafka_sandbox_cluster_app_producer_api_key" {
   day_count                    = var.day_count
   
   depends_on = [
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    time_sleep.wait_for_sandbox_dns
+    confluent_kafka_cluster.sandbox_cluster,
+    module.sandbox_cluster_privatelink
   ]
 }
 
@@ -212,8 +196,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_consumer_read_on_group" {
   }
 
   depends_on = [
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -235,7 +218,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_consumer_read_on_topic" {
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -262,7 +245,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_describe_on_cluste
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -284,8 +267,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_write_on_target_to
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns,
-    confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -307,7 +289,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_create_on_data_pre
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 
@@ -329,7 +311,7 @@ resource "confluent_kafka_acl" "sandbox_cluster_app_connector_write_on_data_prev
   }
 
   depends_on = [
-    time_sleep.wait_for_sandbox_dns
+    module.kafka_sandbox_cluster_app_manager_api_key
   ]
 }
 

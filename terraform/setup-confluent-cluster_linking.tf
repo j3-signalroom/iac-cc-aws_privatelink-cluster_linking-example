@@ -33,6 +33,11 @@ module "sandbox_cluster_linking_app_manager_api_key" {
   key_display_name             = "Confluent Kafka Cluster Service Account API Key - {date} - Managed by Terraform Cloud"
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
+
+  depends_on = [ 
+    confluent_kafka_cluster.sandbox_cluster,
+    module.sandbox_cluster_privatelink
+  ]
 }
 
 resource "confluent_service_account" "shared_cluster_linking_app_manager" {
@@ -70,6 +75,11 @@ module "shared_cluster_linking_app_manager_api_key" {
   key_display_name             = "Confluent Kafka Cluster Service Account API Key - {date} - Managed by Terraform Cloud"
   number_of_api_keys_to_retain = var.number_of_api_keys_to_retain
   day_count                    = var.day_count
+
+  depends_on = [ 
+    confluent_kafka_cluster.shared_cluster,
+    module.shared_cluster_privatelink
+  ]
 }
 
 resource "confluent_cluster_link" "sandbox_and_shared" {
@@ -93,10 +103,9 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
     }
   }
 
-  depends_on = [ 
-    confluent_private_link_attachment_connection.sandbox_cluster_plattc,
-    confluent_private_link_attachment_connection.shared_cluster_plattc,
-    confluent_private_link_attachment_connection.tfc_agent_plattc
+  depends_on = [
+    module.sandbox_cluster_privatelink,
+    module.shared_cluster_privatelink
   ]
 }
 

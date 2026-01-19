@@ -18,3 +18,9 @@ data "aws_availability_zone" "privatelink" {
   for_each = toset(var.subnet_ids)
   name     = data.aws_subnet.privatelink[each.key].availability_zone
 }
+
+# Get Confluent Environment details
+data "confluent_environment" "privatelink" {
+  id = var.confluent_environment_id
+}
+

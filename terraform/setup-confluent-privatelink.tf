@@ -1,7 +1,7 @@
 resource "confluent_private_link_attachment" "non_prod" {
   cloud        = "AWS"
   region       = var.aws_region
-  display_name = "non-prod-aws-platt"
+  display_name = "${confluent_environment.non_prod.display_name}-aws-platt"
   
   environment {
     id = confluent_environment.non_prod.id
@@ -11,9 +11,8 @@ resource "confluent_private_link_attachment" "non_prod" {
 # ============================================================================
 # SANDBOX CLUSTER - PrivateLink Endpoint
 # ============================================================================
-
 module "sandbox_cluster_privatelink" {
-  source = "./aws-privatelink-endpoint"
+  source = "./aws-confluent-privatelink"
   
   # PrivateLink configuration from Confluent
   privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
@@ -25,30 +24,21 @@ module "sandbox_cluster_privatelink" {
 
   # Enterprise configuration
   enterprise_dns_vpc_id = var.enterprise_dns_vpc_id
-}
 
-resource "confluent_private_link_attachment_connection" "sandbox_cluster_plattc" {
-  display_name = "sandbox-cluster-aws-plattc"
-  
-  environment {
-    id = confluent_environment.non_prod.id
-  }
-  
-  aws {
-    vpc_endpoint_id = module.sandbox_cluster_privatelink.vpc_endpoint_id
-  }
+  # Confluent Cloud configuration
+  confluent_environment_id = confluent_environment.non_prod.id
+  confluent_platt_id       = confluent_private_link_attachment.non_prod.id
 
-  private_link_attachment {
-    id = confluent_private_link_attachment.non_prod.id
-  }
+  depends_on = [ 
+    confluent_private_link_attachment.non_prod 
+  ]
 }
 
 # ============================================================================
 # SHARED CLUSTER - PrivateLink Endpoint
 # ============================================================================
-
 module "shared_cluster_privatelink" {
-  source = "./aws-privatelink-endpoint"
+  source = "./aws-confluent-privatelink"
   
   # PrivateLink configuration from Confluent (same attachment!)
   privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
@@ -61,33 +51,20 @@ module "shared_cluster_privatelink" {
   # Enterprise configuration
   enterprise_dns_vpc_id = var.enterprise_dns_vpc_id
 
-  # Ensure sandbox creates its association first
-  depends_on = [
-    module.sandbox_cluster_privatelink
+  # Confluent Cloud configuration
+  confluent_environment_id = confluent_environment.non_prod.id
+  confluent_platt_id       = confluent_private_link_attachment.non_prod.id
+
+  depends_on = [ 
+    confluent_private_link_attachment.non_prod 
   ]
-}
-
-resource "confluent_private_link_attachment_connection" "shared_cluster_plattc" {
-  display_name = "shared-cluster-aws-plattc"
-  
-  environment {
-    id = confluent_environment.non_prod.id
-  }
-  
-  aws {
-    vpc_endpoint_id = module.shared_cluster_privatelink.vpc_endpoint_id
-  }
-
-  private_link_attachment {
-    id = confluent_private_link_attachment.non_prod.id
-  }
 }
 
 # ============================================================================
 # TFC AGENT - PrivateLink Endpoint
 # ============================================================================
 module "tfc_agent_privatelink" {
-  source = "./aws-privatelink-endpoint"
+  source = "./aws-confluent-privatelink"
   
   privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
   dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
@@ -99,29 +76,11 @@ module "tfc_agent_privatelink" {
   # Enterprise configuration
   enterprise_dns_vpc_id = var.enterprise_dns_vpc_id
   
-  depends_on = [
-    module.sandbox_cluster_privatelink,
-    module.shared_cluster_privatelink
-  ]
-}
+  # Confluent Cloud configuration
+  confluent_environment_id = confluent_environment.non_prod.id
+  confluent_platt_id       = confluent_private_link_attachment.non_prod.id
 
-# Tell Confluent to accept the TFC agent VPC endpoint
-resource "confluent_private_link_attachment_connection" "tfc_agent_plattc" {
-  display_name = "tfc-agent-aws-plattc"
-  
-  environment {
-    id = confluent_environment.non_prod.id
-  }
-  
-  aws {
-    vpc_endpoint_id = module.tfc_agent_privatelink.vpc_endpoint_id
-  }
-
-  private_link_attachment {
-    id = confluent_private_link_attachment.non_prod.id
-  }
-  
-  depends_on = [
-    module.tfc_agent_privatelink
+  depends_on = [ 
+    confluent_private_link_attachment.non_prod 
   ]
 }

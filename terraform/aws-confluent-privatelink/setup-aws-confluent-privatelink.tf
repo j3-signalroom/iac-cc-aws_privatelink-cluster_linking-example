@@ -43,7 +43,7 @@ resource "aws_security_group" "privatelink" {
   tags = {
     Name        = "ccloud-privatelink-${local.network_id}"
     VPC         = var.vpc_id
-    Environment = "non-prod"
+    Environment = data.confluent_environment.privatelink.display_name
   }
 }
 
@@ -61,8 +61,12 @@ resource "aws_vpc_endpoint" "privatelink" {
     Name        = "ccloud-privatelink-${local.network_id}"
     VPC         = var.vpc_id
     Domain      = var.dns_domain
-    Environment = "non-prod"
+    Environment = data.confluent_environment.privatelink.display_name
   }
+
+  depends_on = [ 
+    aws_security_group.privatelink 
+  ]
 }
 
 # Route53 Private Hosted Zone
@@ -79,7 +83,7 @@ resource "aws_route53_zone" "privatelink" {
     Name        = "phz-${local.network_id}-${var.vpc_id}"
     VPC         = var.vpc_id
     Domain      = var.dns_domain
-    Environment = "non-prod"
+    Environment = data.confluent_environment.privatelink.display_name
   }
 }
 
@@ -87,6 +91,10 @@ resource "aws_route53_zone" "privatelink" {
 resource "aws_route53_zone_association" "dns_vpc" {
   zone_id = aws_route53_zone.privatelink.zone_id
   vpc_id  = var.enterprise_dns_vpc_id
+
+  depends_on = [ 
+    aws_route53_zone.privatelink
+  ]
 }
 
 # Global wildcard CNAME (for multi-AZ deployments)
@@ -98,6 +106,11 @@ resource "aws_route53_record" "privatelink_wildcard" {
   type    = "CNAME"
   ttl     = 60
   records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
+
+  depends_on = [ 
+    aws_route53_zone.privatelink,
+    aws_vpc_endpoint.privatelink 
+  ]
 }
 
 # Zonal CNAME records (one per subnet/AZ)
@@ -124,6 +137,12 @@ resource "aws_route53_record" "privatelink_zonal" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [ 
+    aws_route53_zone.privatelink,
+    aws_vpc_endpoint.privatelink,
+    data.aws_availability_zone.privatelink
+  ]
 }
 
 # Wait for DNS propagation
@@ -134,5 +153,25 @@ resource "time_sleep" "wait_for_zone_associations" {
     aws_route53_record.privatelink_zonal
   ]
   
-  create_duration = "30s"
+  create_duration = "3m"
+}
+
+resource "confluent_private_link_attachment_connection" "privatelink" {
+  display_name = "ccloud-plattc-${local.network_id}"
+  
+  environment {
+    id = var.confluent_environment_id
+  }
+  
+  aws {
+    vpc_endpoint_id = aws_vpc_endpoint.privatelink.id
+  }
+
+  private_link_attachment {
+    id = var.confluent_platt_id
+  }
+  
+  depends_on = [
+    time_sleep.wait_for_zone_associations
+  ]
 }
