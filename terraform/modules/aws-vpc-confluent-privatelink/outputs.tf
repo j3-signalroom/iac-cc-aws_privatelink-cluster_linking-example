@@ -18,14 +18,14 @@ output "route53_zone_name" {
   value       = aws_route53_zone.privatelink.name
 }
 
-output "subnet_ids" {
+output "vpc_subnet_ids" {
   description = "Subnet IDs used for the VPC endpoint"
-  value       = var.subnet_ids
+  value       = var.vpc_subnet_ids
 }
 
-output "availability_zones" {
+output "vpc_availability_zones" {
   description = "Availability zones where VPC endpoint is deployed"
-  value       = [for id in var.subnet_ids : data.aws_availability_zone.privatelink[id].name]
+  value       = [for id in var.vpc_subnet_ids : data.aws_availability_zone.privatelink[id].name]
 }
 
 output "security_group_id" {

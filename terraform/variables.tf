@@ -69,29 +69,6 @@ variable "confluent_secret_root_path" {
 }
 
 # ===================================================
-# VPC CONFIGURATIONS
-# ===================================================
-variable "sandbox_cluster_vpc_id" {
-  description = "The VPC ID used for the PrivateLink endpoint for the Sandbox Kafka Cluster."
-  type        = string
-}
-
-variable "sandbox_cluster_subnet_ids" {
-  description = "The Subnet IDs used for the PrivateLink endpoint for the Sandbox Kafka Cluster."
-  type        = string
-}
-
-variable "shared_cluster_vpc_id" {
-  description = "The VPC ID used for the PrivateLink endpoint for the Shared Kafka Cluster."
-  type        = string
-}
-
-variable "shared_cluster_subnet_ids" {
-  description = "The Subnet IDs used for the PrivateLink endpoint for the Shared Kafka Cluster."
-  type        = string
-}
-
-# ===================================================
 # TERRAFORM CONFIGURATION
 # ===================================================
 variable "tfe_token" {
@@ -111,5 +88,25 @@ variable "tfc_agent_vpc_id" {
 # ===================================================
 variable "dns_vpc_id" {
   description = "Enterprise (centralized) DNS VPC ID - Private Hosted Zones will be associated with this VPC"
+  type        = string
+}
+
+variable "tfc_agent_vpc_cidr" {
+  description = "Terraform Cloud Agent VPC CIDR"
+  type        = string
+}
+
+variable "tgw_id" {
+  description = "Transit Gateway ID to attach the PrivateLink VPC to"
+  type        = string
+} 
+
+variable "tgw_rt_id" {
+  description = "Transit Gateway Route Table ID to associate the PrivateLink VPC attachment with"
+  type        = string
+}
+
+variable "vpn_client_cidr" {
+  description = "VPN Client CIDR"
   type        = string
 }
