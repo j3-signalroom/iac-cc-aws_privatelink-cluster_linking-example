@@ -24,13 +24,11 @@ resource "aws_vpc_endpoint" "privatelink" {
 # ROUTE53 PRIVATE HOSTED ZONE AND RECORDS
 # ============================================================================
 
-# Route53 Private Hosted Zone
 resource "aws_route53_zone" "privatelink" {
   count = var.shared_phz_id == "" ? 1 : 0
   
   name = var.dns_domain
   
-  # Associate with local VPC
   vpc {
     vpc_id = var.vpc_id
   }
@@ -43,64 +41,21 @@ resource "aws_route53_zone" "privatelink" {
   }
 }
 
-# Data source for existing PHZ (when phz_id is provided)
+# Data source for existing PHZ (when shared_phz_id is provided)
 data "aws_route53_zone" "existing" {
   count   = var.shared_phz_id != "" ? 1 : 0
   zone_id = var.shared_phz_id
 }
 
-# Local to determine which PHZ to use
 locals {
-  shared_phz_id = var.shared_phz_id != "" ? var.shared_phz_id : aws_route53_zone.privatelink[0].zone_id
+  shared_phz_id = var.shared_phz_id != "" ? var.shared_phz_id : aws_route53_zone.privatelink[0].zone_id  
 }
 
-# Global wildcard CNAME (for multi-AZ deployments)
-resource "aws_route53_record" "privatelink_wildcard" {
-  count = length(var.vpc_subnet_details) > 1 ? 1 : 0
-  
-  zone_id = local.shared_phz_id
-  name    = "*.${var.dns_domain}"
-  type    = "CNAME"
-  ttl     = 60
-  records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
-
-  depends_on = [ 
-    aws_vpc_endpoint.privatelink 
-  ]
-}
-
-# Zonal CNAME records (one per subnet/AZ)
-resource "aws_route53_record" "privatelink_zonal" {
-  for_each = var.vpc_subnet_details
-  
-  zone_id = local.shared_phz_id
-  name    = length(var.vpc_subnet_details) == 1 ? "*.${var.dns_domain}" : "*.${each.value.availability_zone_id}.${var.dns_domain}"
-  type    = "CNAME"
-  ttl     = 60
-  
-  records = [
-    format("%s-%s%s",
-      split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
-      each.value.availability_zone,
-      replace(
-        aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"],
-        split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
-        ""
-      )
-    )
-  ]
-  
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [ 
-    aws_vpc_endpoint.privatelink
-  ]
-}
-
+# ============================================================================
+# VPC ASSOCIATIONS
+# ============================================================================
+#
 # Associate the PHZ with the local VPC (only if using existing PHZ)
-# When creating new PHZ, the VPC association happens in the resource above
 resource "aws_route53_zone_association" "local_vpc" {
   count = var.shared_phz_id != "" ? 1 : 0
   
@@ -124,9 +79,7 @@ resource "aws_route53_zone_association" "dns_vpc" {
 # Wait for DNS propagation
 resource "time_sleep" "wait_for_zone_associations" {
   depends_on = [
-    aws_route53_zone_association.dns_vpc,
-    aws_route53_record.privatelink_wildcard,
-    aws_route53_record.privatelink_zonal
+    aws_route53_zone_association.dns_vpc
   ]
   
   create_duration = "3m"
@@ -180,7 +133,7 @@ resource "aws_ec2_transit_gateway_route_table_association" "privatelink" {
 # ============================================================================
 # ROUTE TABLE UPDATES FOR TRANSIT GATEWAY CONNECTIVITY
 # ============================================================================
-
+#
 # Add route to TFC Agent VPC via Transit Gateway
 resource "aws_route" "privatelink_to_tfc_agent" {
   count = var.tfc_agent_vpc_cidr != "" ? 1 : 0
