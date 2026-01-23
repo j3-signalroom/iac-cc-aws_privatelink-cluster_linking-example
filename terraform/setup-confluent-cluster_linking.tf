@@ -36,7 +36,7 @@ module "sandbox_cluster_linking_app_manager_api_key" {
 
   depends_on = [ 
     confluent_kafka_cluster.sandbox_cluster,
-    module.sandbox_cluster_privatelink
+    module.sandbox_vpc_privatelink
   ]
 }
 
@@ -78,7 +78,7 @@ module "shared_cluster_linking_app_manager_api_key" {
 
   depends_on = [ 
     confluent_kafka_cluster.shared_cluster,
-    module.shared_cluster_privatelink
+    module.shared_vpc_privatelink
   ]
 }
 
@@ -104,8 +104,8 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
   }
 
   depends_on = [
-    module.sandbox_cluster_privatelink,
-    module.shared_cluster_privatelink
+    module.sandbox_vpc_privatelink,
+    module.shared_vpc_privatelink
   ]
 }
 

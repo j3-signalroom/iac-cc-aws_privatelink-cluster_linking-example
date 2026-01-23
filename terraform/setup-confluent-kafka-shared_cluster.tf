@@ -14,7 +14,7 @@ resource "confluent_kafka_cluster" "shared_cluster" {
 resource "time_sleep" "wait_for_shared_dns" {
   depends_on = [
     confluent_kafka_cluster.shared_cluster,
-    module.shared_cluster_privatelink,
+    module.shared_vpc_privatelink,
   ]
 
   create_duration = "3m"
@@ -102,7 +102,7 @@ module "kafka_shared_cluster_app_consumer_api_key" {
   depends_on = [
     confluent_service_account.shared_cluster_app_consumer,
     confluent_kafka_cluster.shared_cluster,
-    module.shared_cluster_privatelink
+    module.shared_vpc_privatelink
   ]
 }
 

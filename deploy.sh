@@ -6,15 +6,15 @@
 #
 # *** Script Syntax ***
 # ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
-#                                --tfe-token=<TFE_TOKEN>
-#                                --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID>
 #                                --confluent-api-key=<CONFLUENT_API_KEY>
 #                                --confluent-api-secret=<CONFLUENT_API_SECRET>
+#                                --tfe-token=<TFE_TOKEN>
+#                                --tgw-id=<TGW_ID>
+#                                --tgw-rt-id=<TGW_RT_ID>
+#                                --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID>
+#                                --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR>
 #                                --dns-vpc-id=<dns_vpc_id>
-#                                --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID>
-#                                --sandbox-cluster-subnet-ids=<SANDBOX_CLUSTER_SUBNET_IDS>
-#                                --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID>
-#                                --shared-cluster-subnet-ids=<SHARED_CLUSTER_SUBNET_IDS>
+#                                --vpn-client-cidr=<VPN_CLIENT_CIDR>
 #                                [--day-count=<DAY_COUNT>]
 #
 #
@@ -75,12 +75,12 @@ AWS_PROFILE=""
 confluent_api_key=""
 confluent_api_secret=""
 tfe_token=""
-sandbox_cluster_vpc_id=""
-sandbox_cluster_subnet_ids=""
-shared_cluster_vpc_id=""
-shared_cluster_subnet_ids=""
-dns_vpc_id=""
+tgw_id=""
+tgw_rt_id=""
 tfc_agent_vpc_id=""
+tfc_agent_vpc_cidr=""
+dns_vpc_id=""
+vpn_client_cidr=""
 
 # Default optional variable(s)
 day_count=30
@@ -99,33 +99,30 @@ do
         *"--confluent-api-secret="*)
             arg_length=23
             confluent_api_secret=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--sandbox-cluster-vpc-id="*)
-            arg_length=25
-            sandbox_cluster_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--sandbox-cluster-subnet-ids="*)
-            arg_length=29
-            sandbox_cluster_subnet_ids=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--shared-cluster-vpc-id="*)
-            arg_length=24
-            shared_cluster_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--shared-cluster-subnet-ids="*)
-            arg_length=28
-            shared_cluster_subnet_ids=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--tfc-agent-vpc-id="*)
-            arg_length=19
-            tfc_agent_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--tfc-agent-subnet-ids="*)
-            arg_length=23
-            tfc_agent_subnet_ids=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--tfe-token="*)
             arg_length=12
             tfe_token=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--dns-vpc-id="*)
-            arg_length=13
-            dns_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--tgw-id="*)
+            arg_length=9
+            tgw_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--tgw-rt-id="*)
+            arg_length=12
+            tgw_rt_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--tfc-agent-vpc-cidr="*)
+            arg_length=21
+            tfc_agent_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--tfc-agent-vpc-id="*)
             arg_length=19
             tfc_agent_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--tfc-agent-vpc-cidr="*)
+            arg_length=21
+            tfc_agent_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--dns-vpc-id="*)
+            arg_length=13
+            dns_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
+        *"--vpn-client-cidr="*)
+            arg_length=18
+            vpn_client_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--day-count="*)
             arg_length=12
             day_count=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
@@ -165,66 +162,33 @@ then
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
 
-# Check required --sandbox-cluster-vpc-id argument was supplied
-if [ -z "$sandbox_cluster_vpc_id" ]
-then
-    echo
-    echo "(Error Message 005)  You did not include the proper use of the --sandbox-cluster-vpc-id=<SANDBOX_CLUSTER_VPC_ID> argument in the call."
-    echo
-    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
-# Check required --sandbox-cluster-subnet-ids argument was supplied
-if [ -z "$sandbox_cluster_subnet_ids" ]
-then
-    echo
-    echo "(Error Message 006)  You did not include the proper use of the --sandbox-cluster-subnet-ids=<SANDBOX_CLUSTER_SUBNET_IDS> argument in the call."
-    echo
-    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
-# Check required --shared-cluster-vpc-id argument was supplied
-if [ -z "$shared_cluster_vpc_id" ]
-then
-    echo
-    echo "(Error Message 007)  You did not include the proper use of the --shared-cluster-vpc-id=<SHARED_CLUSTER_VPC_ID> argument in the call."
-    echo
-    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
-# Check required --shared-cluster-subnet-ids argument was supplied
-if [ -z "$shared_cluster_subnet_ids" ]
-then
-    echo
-    echo "(Error Message 008)  You did not include the proper use of the --shared-cluster-subnet-ids=<SHARED_CLUSTER_SUBNET_IDS> argument in the call."
-    echo
-    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
 # Check required --tfe-token argument was supplied
 if [ -z "$tfe_token" ]
 then
     echo
-    echo "(Error Message 009)  You did not include the proper use of the --tfe-token=<TFE_TOKEN> argument in the call."
+    echo "(Error Message 005)  You did not include the proper use of the --tfe-token=<TFE_TOKEN> argument in the call."
     echo
     echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
 
-# Check required --dns-vpc-id argument was supplied
-if [ -z "$dns_vpc_id" ]
+# Check required --tgw-id argument was supplied
+if [ -z "$tgw_id" ]
 then
     echo
-    echo "(Error Message 010)  You did not include the proper use of the --dns-vpc-id=<dns_vpc_id> argument in the call."
+    echo "(Error Message 006)  You did not include the proper use of the --tgw-id=<TGW_ID> argument in the call."
+    echo
+    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --tgw-rt-id argument was supplied
+if [ -z "$tgw_rt_id" ]
+then
+    echo
+    echo "(Error Message 007)  You did not include the proper use of the --tgw-rt-id=<TGW_RT_ID> argument in the call."
     echo
     echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
     echo
@@ -235,7 +199,40 @@ fi
 if [ -z "$tfc_agent_vpc_id" ]
 then
     echo
-    echo "(Error Message 011)  You did not include the proper use of the --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> argument in the call."
+    echo "(Error Message 008)  You did not include the proper use of the --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> argument in the call."
+    echo
+    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --tfc-agent-vpc-cidr argument was supplied
+if [ -z "$tfc_agent_vpc_cidr" ]
+then
+    echo
+    echo "(Error Message 009)  You did not include the proper use of the --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> argument in the call."
+    echo
+    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --dns-vpc-id argument was supplied
+if [ -z "$dns_vpc_id" ]
+then
+    echo
+    echo "(Error Message 010)  You did not include the proper use of the --dns-vpc-id=<DNS_VPC_ID> argument in the call."
+    echo
+    echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
+    echo
+    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
+fi
+
+# Check required --vpn-client-cidr argument was supplied
+if [ -z "$vpn_client_cidr" ]
+then
+    echo
+    echo "(Error Message 011)  You did not include the proper use of the --vpn-client-cidr=<VPN_CLIENT_CIDR> argument in the call."
     echo
     echo "Usage:  Require all nine arguments ---> `basename $0 $1` $augment_list"
     echo
@@ -267,18 +264,18 @@ deploy_infrastructure() {
     export TF_VAR_confluent_api_secret="${confluent_api_secret}"
     export TF_VAR_confluent_secret_root_path="${confluent_secret_root_path}"
     export TF_VAR_day_count="${day_count}"
-    export TF_VAR_sandbox_cluster_vpc_id="${sandbox_cluster_vpc_id}"
-    export TF_VAR_sandbox_cluster_subnet_ids=${sandbox_cluster_subnet_ids}
-    export TF_VAR_shared_cluster_vpc_id="${shared_cluster_vpc_id}"
-    export TF_VAR_shared_cluster_subnet_ids=${shared_cluster_subnet_ids}
     export TF_VAR_tfe_token="${tfe_token}"
     export TF_VAR_dns_vpc_id="${dns_vpc_id}"
     export TF_VAR_tfc_agent_vpc_id="${tfc_agent_vpc_id}"
+    export TF_VAR_tfc_agent_vpc_cidr="${tfc_agent_vpc_cidr}"
+    export TF_VAR_vpn_client_cidr="${vpn_client_cidr}"
+    export TF_VAR_tgw_id="${tgw_id}"
+    export TF_VAR_tgw_rt_id="${tgw_rt_id}"
 
     # Initialize Terraform if needed
     print_info "Initializing Terraform..."
     terraform init
-        
+
     # Plan
     print_info "Running Terraform plan..."
     terraform plan -out=tfplan
@@ -322,13 +319,14 @@ undeploy_infrastructure() {
     export TF_VAR_confluent_api_key="${confluent_api_key}"
     export TF_VAR_confluent_api_secret="${confluent_api_secret}"
     export TF_VAR_confluent_secret_root_path="${confluent_secret_root_path}"
-    export TF_VAR_sandbox_cluster_vpc_id="${sandbox_cluster_vpc_id}"
-    export TF_VAR_sandbox_cluster_subnet_ids=${sandbox_cluster_subnet_ids}
-    export TF_VAR_shared_cluster_vpc_id="${shared_cluster_vpc_id}"
-    export TF_VAR_shared_cluster_subnet_ids=${shared_cluster_subnet_ids}
+    export TF_VAR_day_count="${day_count}"
     export TF_VAR_tfe_token="${tfe_token}"
     export TF_VAR_dns_vpc_id="${dns_vpc_id}"
     export TF_VAR_tfc_agent_vpc_id="${tfc_agent_vpc_id}"
+    export TF_VAR_tfc_agent_vpc_cidr="${tfc_agent_vpc_cidr}"
+    export TF_VAR_vpn_client_cidr="${vpn_client_cidr}"
+    export TF_VAR_tgw_id="${tgw_id}"
+    export TF_VAR_tgw_rt_id="${tgw_rt_id}"
 
     # Destroy
     print_info "Running Terraform destroy..."

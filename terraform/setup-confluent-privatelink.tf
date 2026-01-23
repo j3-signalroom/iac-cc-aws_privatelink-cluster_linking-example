@@ -8,60 +8,264 @@ resource "confluent_private_link_attachment" "non_prod" {
   }
 }
 
-# ============================================================================
-# SANDBOX CLUSTER - PrivateLink Endpoint
-# ============================================================================
-module "sandbox_cluster_privatelink" {
-  source = "./aws-confluent-privatelink"
+# ===================================================================================
+# SANDBOX AWS VPC WITH TGW INTEGRATION CREATION
+# ===================================================================================
+module "sandbox_vpc" {
+  source = "./modules/aws-vpc"
   
-  # PrivateLink configuration from Confluent
-  privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
-  dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
-  
-  # AWS VPC configuration
-  vpc_id     = var.sandbox_cluster_vpc_id
-  subnet_ids = split(",", var.sandbox_cluster_subnet_ids)
-
-  # Enterprise configuration
-  dns_vpc_id = var.dns_vpc_id
-
-  # Confluent Cloud configuration
-  confluent_environment_id = confluent_environment.non_prod.id
-  confluent_platt_id       = confluent_private_link_attachment.non_prod.id
-
-  # Terraform Cloud Agent VPC ID
-  tfc_agent_vpc_id = var.tfc_agent_vpc_id
+  vpc_name          = "sandbox-${confluent_environment.non_prod.display_name}-vpc"
+  vpc_cidr          = "10.0.0.0/20"
+  subnet_count      = 3
+  new_bits          = 4
 
   depends_on = [ 
     confluent_private_link_attachment.non_prod 
   ]
 }
 
-# ============================================================================
-# SHARED CLUSTER - PrivateLink Endpoint
-# ============================================================================
-module "shared_cluster_privatelink" {
-  source = "./aws-confluent-privatelink"
+# ===================================================================================
+# SHARED (CLUSTER) AWS VPC WITH TGW INTEGRATION CREATION
+# ===================================================================================
+module "shared_vpc" {
+  source = "./modules/aws-vpc"
   
-  # PrivateLink configuration from Confluent (same attachment!)
+  vpc_name          = "shared-${confluent_environment.non_prod.display_name}-vpc"
+  vpc_cidr          = "10.1.0.0/20"
+  subnet_count      = 3
+  new_bits          = 4
+
+  depends_on = [ 
+    confluent_private_link_attachment.non_prod 
+  ]
+}
+
+# ===================================================================================
+# SHARED PRIVATE HOSTED ZONE
+# ===================================================================================
+resource "aws_route53_zone" "confluent_privatelink" {
+  name = confluent_private_link_attachment.non_prod.dns_domain
+  
+  vpc {
+    vpc_id = var.tfc_agent_vpc_id
+  }
+
+  tags = {
+    Name      = "phz-confluent-privatelink-shared"
+    Purpose   = "Shared PHZ for all Confluent PrivateLink connections"
+    ManagedBy = "Terraform Cloud"
+  }
+  
+  depends_on = [ 
+    module.sandbox_vpc,
+    module.shared_vpc
+   ]
+}
+
+# ===================================================================================
+# SANDBOX PRIVATELINK MODULE
+# ===================================================================================
+module "sandbox_vpc_privatelink" {
+  source = "./modules/aws-vpc-confluent-privatelink"
+  
+  # Transit Gateway configuration
+  tgw_id                   = var.tgw_id
+  tgw_rt_id                = var.tgw_rt_id
+
+  # PrivateLink configuration from Confluent
   privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
   dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
   
   # AWS VPC configuration
-  vpc_id     = var.shared_cluster_vpc_id
-  subnet_ids = split(",", var.shared_cluster_subnet_ids)
-  
-  # Enterprise configuration
-  dns_vpc_id = ""
+  vpc_id                   = module.sandbox_vpc.vpc_id
+  vpc_cidr                 = module.sandbox_vpc.vpc_cidr
+  vpc_subnet_details       = module.sandbox_vpc.vpc_subnet_details
+  vpc_rt_id                = module.sandbox_vpc.vpc_rt_id
+
+  # VPN Client configuration
+  vpn_client_cidr          = var.vpn_client_cidr
+
+  # DNS VPC configuration
+  dns_vpc_id               = var.dns_vpc_id
 
   # Confluent Cloud configuration
   confluent_environment_id = confluent_environment.non_prod.id
   confluent_platt_id       = confluent_private_link_attachment.non_prod.id
 
-  # Terraform Cloud Agent VPC ID is not provided for shared cluster
-  tfc_agent_vpc_id = ""
+  # Terraform Cloud Agent configuration
+  tfc_agent_vpc_id         = var.tfc_agent_vpc_id 
+  tfc_agent_vpc_cidr       = var.tfc_agent_vpc_cidr
+
+  # Use shared PHZ instead of creating own
+  shared_phz_id            = aws_route53_zone.confluent_privatelink.zone_id
 
   depends_on = [ 
-    confluent_private_link_attachment.non_prod 
+      aws_route53_zone.confluent_privatelink
   ]
+}
+
+# ===================================================================================
+# SHARED PRIVATELINK MODULE
+# ===================================================================================
+module "shared_vpc_privatelink" {
+  source = "./modules/aws-vpc-confluent-privatelink"
+  
+  # Transit Gateway configuration
+  tgw_id                   = var.tgw_id
+  tgw_rt_id                = var.tgw_rt_id
+
+  # PrivateLink configuration from Confluent
+  privatelink_service_name = confluent_private_link_attachment.non_prod.aws[0].vpc_endpoint_service_name
+  dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
+  
+  # AWS VPC configuration
+  vpc_id                   = module.shared_vpc.vpc_id
+  vpc_cidr                 = module.shared_vpc.vpc_cidr
+  vpc_subnet_details       = module.shared_vpc.vpc_subnet_details
+  vpc_rt_id                = module.shared_vpc.vpc_rt_id
+
+  # VPN Client configuration
+  vpn_client_cidr          = var.vpn_client_cidr
+
+  # DNS VPC configuration
+  dns_vpc_id               = var.dns_vpc_id
+
+  # Confluent Cloud configuration
+  confluent_environment_id = confluent_environment.non_prod.id
+  confluent_platt_id       = confluent_private_link_attachment.non_prod.id
+
+  # Terraform Cloud Agent configuration
+  tfc_agent_vpc_id         = var.tfc_agent_vpc_id 
+  tfc_agent_vpc_cidr       = var.tfc_agent_vpc_cidr
+
+  # Use shared PHZ instead of creating own
+  shared_phz_id            = aws_route53_zone.confluent_privatelink.zone_id
+
+  depends_on = [ 
+    aws_route53_zone.confluent_privatelink
+  ]
+}
+
+# ===================================================================================
+# DNS RECORDS FOR BOTH VPC ENDPOINTS (Managed at Root Level)
+# ===================================================================================
+
+# Sandbox VPC Endpoint DNS Records
+resource "aws_route53_record" "sandbox_zonal" {
+  for_each = module.sandbox_vpc.vpc_subnet_details
+  
+  zone_id = aws_route53_zone.confluent_privatelink.zone_id
+  name    = "*.${each.value.availability_zone_id}.${confluent_private_link_attachment.non_prod.dns_domain}"
+  type    = "CNAME"
+  ttl     = 60
+  
+  records = [
+    format("%s-%s%s",
+      split(".", module.sandbox_vpc_privatelink.vpc_endpoint_dns)[0],
+      each.value.availability_zone,
+      replace(
+        module.sandbox_vpc_privatelink.vpc_endpoint_dns,
+        split(".", module.sandbox_vpc_privatelink.vpc_endpoint_dns)[0],
+        ""
+      )
+    )
+  ]
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [ 
+    module.sandbox_vpc_privatelink
+  ]
+}
+
+# Shared VPC Endpoint DNS Records
+resource "aws_route53_record" "shared_zonal" {
+  for_each = module.shared_vpc.vpc_subnet_details
+  
+  zone_id = aws_route53_zone.confluent_privatelink.zone_id
+  name    = "*.${each.value.availability_zone_id}.${confluent_private_link_attachment.non_prod.dns_domain}"
+  type    = "CNAME"
+  ttl     = 60
+  
+  records = [
+    format("%s-%s%s",
+      split(".", module.shared_vpc_privatelink.vpc_endpoint_dns)[0],
+      each.value.availability_zone,
+      replace(
+        module.shared_vpc_privatelink.vpc_endpoint_dns,
+        split(".", module.shared_vpc_privatelink.vpc_endpoint_dns)[0],
+        ""
+      )
+    )
+  ]
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [ 
+    module.shared_vpc_privatelink
+  ]
+}
+
+# Global wildcard CNAME pointing to Shared VPC endpoint (as primary)
+resource "aws_route53_record" "wildcard" {
+  zone_id = aws_route53_zone.confluent_privatelink.zone_id
+  name    = "*.${confluent_private_link_attachment.non_prod.dns_domain}"
+  type    = "CNAME"
+  ttl     = 60
+  records = [module.shared_vpc_privatelink.vpc_endpoint_dns]
+
+  depends_on = [ 
+    module.shared_vpc_privatelink
+  ]
+}
+
+# ===================================================================================
+# TFC AGENT VPC ROUTES
+# ===================================================================================
+data "aws_route_tables" "tfc_agent" {
+  vpc_id = var.tfc_agent_vpc_id
+  
+  filter {
+    name   = "association.main"
+    values = ["false"]
+  }
+}
+
+# Add routes to Sandbox PrivateLink VPC
+resource "aws_route" "tfc_to_sandbox_privatelink" {
+  for_each = toset(data.aws_route_tables.tfc_agent.ids)
+  
+  route_table_id         = each.value
+  destination_cidr_block = "10.0.0.0/20"
+  transit_gateway_id     = var.tgw_id
+}
+
+# Add routes to Shared PrivateLink VPC
+resource "aws_route" "tfc_to_shared_privatelink" {
+  for_each = toset(data.aws_route_tables.tfc_agent.ids)
+  
+  route_table_id         = each.value
+  destination_cidr_block = "10.1.0.0/20"
+  transit_gateway_id     = var.tgw_id
+}
+
+# ===================================================================================
+# WAIT FOR DNS PROPAGATION
+# ===================================================================================
+resource "time_sleep" "wait_for_dns" {
+  depends_on = [
+    module.sandbox_vpc_privatelink,
+    module.shared_vpc_privatelink,
+    aws_route53_record.sandbox_zonal,
+    aws_route53_record.shared_zonal,
+    aws_route53_record.wildcard,
+    aws_route.tfc_to_sandbox_privatelink,
+    aws_route.tfc_to_shared_privatelink
+  ]
+  
+  create_duration = "3m"
 }

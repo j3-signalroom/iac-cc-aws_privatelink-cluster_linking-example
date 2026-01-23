@@ -57,7 +57,7 @@ module "kafka_sandbox_cluster_app_manager_api_key" {
 
   depends_on = [
     confluent_kafka_cluster.sandbox_cluster,
-    module.sandbox_cluster_privatelink
+    module.sandbox_vpc_privatelink
   ]
 }
 
@@ -110,7 +110,7 @@ module "kafka_sandbox_cluster_app_consumer_api_key" {
 
   depends_on = [
     confluent_kafka_cluster.sandbox_cluster,
-    module.sandbox_cluster_privatelink
+    module.sandbox_vpc_privatelink
   ]
 }
 
@@ -174,7 +174,7 @@ module "kafka_sandbox_cluster_app_producer_api_key" {
   
   depends_on = [
     confluent_kafka_cluster.sandbox_cluster,
-    module.sandbox_cluster_privatelink
+    module.sandbox_vpc_privatelink
   ]
 }
 
