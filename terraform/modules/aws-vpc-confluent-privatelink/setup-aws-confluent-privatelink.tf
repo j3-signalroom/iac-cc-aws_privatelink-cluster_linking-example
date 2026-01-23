@@ -59,8 +59,7 @@ locals {
 resource "aws_route53_zone_association" "local_vpc" {
   count = (
     var.shared_phz_id != "" && 
-    var.vpc_id != var.tfc_agent_vpc_id &&
-    var.vpc_id != var.dns_vpc_id
+    var.vpc_id != var.tfc_agent_vpc_id
   ) ? 1 : 0
   
   zone_id = local.shared_phz_id
