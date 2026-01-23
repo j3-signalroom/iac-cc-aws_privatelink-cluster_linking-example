@@ -83,19 +83,22 @@ variable "tfc_agent_vpc_id" {
   type        = string
 }
 
+variable "tfc_agent_vpc_cidr" {
+  description = "Terraform Cloud Agent VPC CIDR"
+  type        = string
+}
+
 # ===================================================
-# ENTERPRISE CONFIGURATION
+# DNS VPC CONFIGURATION
 # ===================================================
 variable "dns_vpc_id" {
   description = "Enterprise (centralized) DNS VPC ID - Private Hosted Zones will be associated with this VPC"
   type        = string
 }
 
-variable "tfc_agent_vpc_cidr" {
-  description = "Terraform Cloud Agent VPC CIDR"
-  type        = string
-}
-
+# ===================================================
+# TRANSIT GATEWAY CONFIGURATION
+# ===================================================
 variable "tgw_id" {
   description = "Transit Gateway ID to attach the PrivateLink VPC to"
   type        = string
@@ -106,6 +109,9 @@ variable "tgw_rt_id" {
   type        = string
 }
 
+# ===================================================
+# VPN CLIENT VPC CONFIGURATION
+# ===================================================
 variable "vpn_client_cidr" {
   description = "VPN Client CIDR"
   type        = string

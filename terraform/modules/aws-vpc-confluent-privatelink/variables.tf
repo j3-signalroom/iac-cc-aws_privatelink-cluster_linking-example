@@ -48,14 +48,15 @@ variable "vpc_rt_id" {
   type        = string
 }
 
-variable "vpc_subnet_ids" {
-  description = "List of subnet IDs for the VPC endpoint (one per AZ for high availability)"
-  type        = list(string)
-}
-
-variable "vpc_availability_zones" {
-  description = "List of availability zones for the provided subnet IDs"
-  type        = list(string)
+variable "vpc_subnet_details" {
+  description = "Map of AZ names to subnet IDs for the VPC endpoint"
+  type        = map(object({
+    id                   = string
+    cidr_block           = string
+    availability_zone    = string
+    availability_zone_id = string
+    name                 = string
+  }))
 }
 
 variable "vpn_client_cidr" {
@@ -75,5 +76,10 @@ variable "tfc_agent_vpc_cidr" {
 
 variable "dns_vpc_id" {
   description = "Enterprise (centralized) DNS VPC ID - Private Hosted Zones will be associated with this VPC"
+  type        = string
+}
+
+variable "shared_phz_id" {
+  description = "Optional: Existing Route53 Private Hosted Zone ID. If provided, the module will use this instead of creating a new one. Leave empty to create a new PHZ."
   type        = string
 }

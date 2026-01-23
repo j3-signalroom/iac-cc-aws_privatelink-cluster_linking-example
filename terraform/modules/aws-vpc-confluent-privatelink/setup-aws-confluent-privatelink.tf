@@ -6,7 +6,7 @@ resource "aws_vpc_endpoint" "privatelink" {
   security_group_ids  = [aws_security_group.privatelink.id]
   private_dns_enabled = false
   
-  subnet_ids = var.vpc_subnet_ids
+  subnet_ids = [for subnet in var.vpc_subnet_details : subnet.id]
   
   tags = {
     Name        = "ccloud-privatelink-${local.network_id}"
@@ -20,9 +20,14 @@ resource "aws_vpc_endpoint" "privatelink" {
   ]
 }
 
+# ============================================================================
+# ROUTE53 PRIVATE HOSTED ZONE AND RECORDS
+# ============================================================================
+
 # Route53 Private Hosted Zone
-# CRITICAL: Zone name must exactly match Confluent DNS domain
 resource "aws_route53_zone" "privatelink" {
+  count = var.shared_phz_id == "" ? 1 : 0
+  
   name = var.dns_domain
   
   # Associate with local VPC
@@ -38,59 +43,45 @@ resource "aws_route53_zone" "privatelink" {
   }
 }
 
-# Associate the PHZ with the DNS VPC, if provided
-resource "aws_route53_zone_association" "dns_vpc" {
-  count = (var.dns_vpc_id != "") ? 1 : 0
-
-  zone_id = aws_route53_zone.privatelink.zone_id
-  vpc_id  = var.dns_vpc_id
-
-  depends_on = [ 
-    aws_route53_zone.privatelink
-  ]
+# Data source for existing PHZ (when phz_id is provided)
+data "aws_route53_zone" "existing" {
+  count   = var.shared_phz_id != "" ? 1 : 0
+  zone_id = var.shared_phz_id
 }
 
-# Associate the PHZ with the TFC Agent VPC, if provided
-resource "aws_route53_zone_association" "tfc_agent" {
-  count = (var.tfc_agent_vpc_id != "") ? 1 : 0
-  
-  zone_id = aws_route53_zone.privatelink.zone_id
-  vpc_id  = var.tfc_agent_vpc_id
-
-  depends_on = [ 
-    aws_route53_zone.privatelink
-  ]
+# Local to determine which PHZ to use
+locals {
+  shared_phz_id = var.shared_phz_id != "" ? var.shared_phz_id : aws_route53_zone.privatelink[0].zone_id
 }
 
 # Global wildcard CNAME (for multi-AZ deployments)
 resource "aws_route53_record" "privatelink_wildcard" {
-  count = length(var.vpc_subnet_ids) > 1 ? 1 : 0
+  count = length(var.vpc_subnet_details) > 1 ? 1 : 0
   
-  zone_id = aws_route53_zone.privatelink.zone_id
+  zone_id = local.shared_phz_id
   name    = "*.${var.dns_domain}"
   type    = "CNAME"
   ttl     = 60
   records = [aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"]]
 
   depends_on = [ 
-    aws_route53_zone.privatelink,
     aws_vpc_endpoint.privatelink 
   ]
 }
 
 # Zonal CNAME records (one per subnet/AZ)
 resource "aws_route53_record" "privatelink_zonal" {
-  for_each = toset(var.vpc_subnet_ids)
+  for_each = var.vpc_subnet_details
   
-  zone_id = aws_route53_zone.privatelink.zone_id
-  name    = length(var.vpc_subnet_ids) == 1 ? "*.${var.dns_domain}" : "*.${data.aws_availability_zone.privatelink[each.key].zone_id}.${var.dns_domain}"
+  zone_id = local.shared_phz_id
+  name    = length(var.vpc_subnet_details) == 1 ? "*.${var.dns_domain}" : "*.${each.value.availability_zone_id}.${var.dns_domain}"
   type    = "CNAME"
   ttl     = 60
   
   records = [
     format("%s-%s%s",
       split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
-      data.aws_availability_zone.privatelink[each.key].name,
+      each.value.availability_zone,
       replace(
         aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"],
         split(".", aws_vpc_endpoint.privatelink.dns_entry[0]["dns_name"])[0],
@@ -104,8 +95,29 @@ resource "aws_route53_record" "privatelink_zonal" {
   }
 
   depends_on = [ 
-    aws_route53_zone.privatelink,
     aws_vpc_endpoint.privatelink
+  ]
+}
+
+# Associate the PHZ with the local VPC (only if using existing PHZ)
+# When creating new PHZ, the VPC association happens in the resource above
+resource "aws_route53_zone_association" "local_vpc" {
+  count = var.shared_phz_id != "" ? 1 : 0
+  
+  zone_id = local.shared_phz_id
+  vpc_id  = var.vpc_id
+}
+
+# Associate the PHZ with the DNS VPC, if provided
+resource "aws_route53_zone_association" "dns_vpc" {
+  count = (var.dns_vpc_id != "") ? 1 : 0
+
+  zone_id = local.shared_phz_id
+  vpc_id  = var.dns_vpc_id
+
+  depends_on = [ 
+    aws_route53_zone.privatelink,
+    aws_route53_zone_association.local_vpc
   ]
 }
 
@@ -113,7 +125,6 @@ resource "aws_route53_record" "privatelink_zonal" {
 resource "time_sleep" "wait_for_zone_associations" {
   depends_on = [
     aws_route53_zone_association.dns_vpc,
-    aws_route53_zone_association.tfc_agent,
     aws_route53_record.privatelink_wildcard,
     aws_route53_record.privatelink_zonal
   ]
@@ -144,9 +155,8 @@ resource "confluent_private_link_attachment_connection" "privatelink" {
 # ============================================================================
 # TRANSIT GATEWAY ATTACHMENT
 # ============================================================================
-
 resource "aws_ec2_transit_gateway_vpc_attachment" "privatelink" {
-  subnet_ids         = data.aws_subnets.privatelink.ids
+  subnet_ids         = [for subnet in var.vpc_subnet_details : subnet.id]
   transit_gateway_id = var.tgw_id
   vpc_id             = var.vpc_id
   
@@ -171,15 +181,10 @@ resource "aws_ec2_transit_gateway_route_table_association" "privatelink" {
 # ROUTE TABLE UPDATES FOR TRANSIT GATEWAY CONNECTIVITY
 # ============================================================================
 
-# Add route to for VPC via Transit Gateway
-resource "aws_route" "privatelink_to_vpc" {
-  route_table_id         = var.vpc_rt_id
-  destination_cidr_block = var.vpc_cidr
-  transit_gateway_id     = var.tgw_id
-}
-
 # Add route to TFC Agent VPC via Transit Gateway
 resource "aws_route" "privatelink_to_tfc_agent" {
+  count = var.tfc_agent_vpc_cidr != "" ? 1 : 0
+  
   route_table_id         = var.vpc_rt_id
   destination_cidr_block = var.tfc_agent_vpc_cidr
   transit_gateway_id     = var.tgw_id
@@ -191,6 +196,8 @@ resource "aws_route" "privatelink_to_tfc_agent" {
 
 # Add route to VPN clients via Transit Gateway
 resource "aws_route" "privatelink_to_vpn_client" {
+  count = var.vpn_client_cidr != "" ? 1 : 0
+  
   route_table_id         = var.vpc_rt_id
   destination_cidr_block = var.vpn_client_cidr
   transit_gateway_id     = var.tgw_id

@@ -27,6 +27,11 @@ output "private_subnet_azs" {
   value       = aws_subnet.private[*].availability_zone
 }
 
+output "private_subnet_az_ids" {
+  description = "List of availability zone IDs for private subnets"
+  value       = aws_subnet.private[*].availability_zone_id
+}
+
 output "vpc_rt_id" {
   description = "Private route table ID"
   value       = aws_route_table.private.id
@@ -45,14 +50,16 @@ output "subnet_map" {
   }
 }
 
-output "subnet_details" {
-  description = "Detailed information about all subnets"
-  value = [
-    for index, subnet in aws_subnet.private : {
-      id                = subnet.id
-      cidr_block        = subnet.cidr_block
-      availability_zone = subnet.availability_zone
-      name              = "${var.vpc_name}-private-subnet-${index + 1}"
+output "vpc_subnet_details" {
+  description = "Detailed information about all subnets keyed by index"
+  value = {
+    for index, subnet in aws_subnet.private :
+    tostring(index) => {  # Use static index as key
+      id                   = subnet.id
+      cidr_block           = subnet.cidr_block
+      availability_zone    = subnet.availability_zone
+      availability_zone_id = subnet.availability_zone_id
+      name                 = "${var.vpc_name}-private-subnet-${index + 1}"
     }
-  ]
+  }
 }
