@@ -88,6 +88,16 @@ variable "tfc_agent_vpc_cidr" {
   type        = string
 }
 
+variable "tfc_agent_vpc_rt_ids" {
+  description = "List of route table IDs for TFC Agent VPC"
+  type        = list(string)
+  default = [
+    "rtb-0fbb7f1f99d9d3ad3",
+    "rtb-0461aecd651d154cc",
+    "rtb-0996eb3281e3d9d3d"
+  ]
+}
+
 # ===================================================
 # DNS VPC CONFIGURATION
 # ===================================================
