@@ -357,7 +357,10 @@ undeploy_infrastructure() {
 
     # Destroy
     print_info "Running Terraform destroy..."
-    terraform destroy -auto-approve
+    
+    # Auto approves the destroy plan without prompting, and destroys based on state only, without
+    # trying to refresh data sources
+    terraform destroy -auto-approve -refresh=false
 
     # Force the delete of the AWS Secrets
     print_info "Deleting AWS Secrets..."
