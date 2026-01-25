@@ -352,11 +352,15 @@ undeploy_infrastructure() {
     export TF_VAR_tfc_agent_vpc_cidr="${tfc_agent_vpc_cidr}"
     export TF_VAR_vpn_client_vpc_cidr="${vpn_client_vpc_cidr}"
     export TF_VAR_vpn_vpc_cidr="${vpn_vpc_cidr}"
+    export TF_VAR_tgw_id="${tgw_id}"
     export TF_VAR_tgw_rt_id="${tgw_rt_id}"
 
     # Destroy
     print_info "Running Terraform destroy..."
-    terraform destroy -auto-approve
+    
+    # Auto approves the destroy plan without prompting, and destroys based on state only, without
+    # trying to refresh data sources
+    terraform destroy -auto-approve -refresh=false
 
     # Force the delete of the AWS Secrets
     print_info "Deleting AWS Secrets..."
