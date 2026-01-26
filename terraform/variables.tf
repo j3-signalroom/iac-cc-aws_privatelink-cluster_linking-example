@@ -99,6 +99,24 @@ variable "tfc_agent_vpc_rt_ids" {
   ]
 }
 
+variable "sandbox_vpc_rt_ids" {
+  description = "List of route table IDs for Sandbox VPC"
+  type        = list(string)
+  default     = [
+    "rtb-02818726efd3a458f",
+    "rtb-01fd54c13b6686052"
+  ]
+}
+
+variable "shared_vpc_rt_ids" {
+  description = "List of route table IDs for Shared VPC"
+  type        = list(string)
+  default     = [
+    "rtb-0055430d78350e02c", 
+    "rtb-07a542474ab95dbe2"
+  ]
+}
+
 # ===================================================
 # DNS VPC CONFIGURATION
 # ===================================================
