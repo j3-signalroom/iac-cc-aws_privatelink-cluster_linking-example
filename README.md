@@ -1,4 +1,4 @@
-# Confluent Cloud IaC AWS Private Network Interface (PNI) with Two Isolated VPCs with Cluster Linking between them Example
+# IaC Confluent Cloud AWS Private Linking with Cluster Linking Example
 This repository provides **production-grade Terraform infrastructure-as-code** that implements a **secure, multi-network Confluent Cloud architecture**. It demonstrates **AWS PrivateLink connectivity from a single Confluent Cloud environment to multiple AWS VPCs**, enabling private, network-isolated access without exposing traffic to the public internet.
 
 The solution also showcases **in-region Cluster Linking between two Confluent Cloud Kafka clusters**, enabling **low-latency, fully managed data replication** across teams, lines of business, or isolated environments (for example, development, staging, and production) within the same AWS region.
@@ -7,7 +7,7 @@ Cluster Linking maintains an **in-sync mirror of selected topics** on the consum
 
 Access control and ownership remain cleanly separated: the producing team grants **scoped read credentials** to approved topics, while the consuming team **creates, owns, monitors, and manages the cluster link**. This pattern enables secure, scalable data sharing with clear operational boundaries and minimal coupling.
 
-![cc-cluster_linking-privatelinking-iac-demo](docs/images/cc-cluster_linking-privatelinking-iac-demo.png)
+![iac-cc-aws_privatelink-cluster_linking-example](docs/images/iac-cc-aws_privatelink-cluster_linking-example.png)
 
 Below is the Terraform resource visualization of the infrastructure that's created:
 

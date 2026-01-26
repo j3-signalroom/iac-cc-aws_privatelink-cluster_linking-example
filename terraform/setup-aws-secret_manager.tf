@@ -8,7 +8,7 @@ resource "aws_secretsmanager_secret_version" "schema_registry_cluster_api_key" {
     secret_id     = aws_secretsmanager_secret.schema_registry_cluster_api_key.id
     secret_string = jsonencode({"schema.registry.basic.auth.credentials.source": "USER_INFO",
                                 "schema.registry.basic.auth.user.info": "${module.schema_registry_cluster_api_key_rotation.active_api_key.id}:${module.schema_registry_cluster_api_key_rotation.active_api_key.secret}",
-                                "schema.registry.url": "${data.confluent_schema_registry_cluster.cluster_linking_demo.rest_endpoint}"})
+                                "schema.registry.url": "${data.confluent_schema_registry_cluster.aws_privatelink_example.rest_endpoint}"})
 }
 
 # Create the Kafka Cluster Secrets: JAAS (Java Authentication and Authorization) representation
