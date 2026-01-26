@@ -3,7 +3,7 @@ terraform {
       organization = "signalroom"
 
         workspaces {
-            name = "cc-iac-aws_pni-isolated-vpcs-cl-example"
+            name = "iac-cc-aws-privatelink-cluster-linking-example"
         }
     }
 

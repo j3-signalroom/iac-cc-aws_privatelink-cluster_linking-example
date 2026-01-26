@@ -2,7 +2,7 @@
 
 #
 # *** Purpose ***
-# To deploy or destroy the infrastructure for the Confluent Cloud Cluster Linking over PrivateLink demo.
+# To deploy or destroy the infrastructure for the Confluent Cloud Cluster Linking with PrivateLink example.
 #
 # *** Script Syntax ***
 # ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
@@ -233,11 +233,11 @@ then
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
 
-# Check required --vpn-client-cidr argument was supplied
+# Check required --vpn-client-vpc-cidr argument was supplied
 if [ -z "$vpn_client_vpc_cidr" ]
 then
     echo
-    echo "(Error Message 011)  You did not include the proper use of the --vpn-client-cidr=<vpn_client_vpc_cidr> argument in the call."
+    echo "(Error Message 011)  You did not include the proper use of the --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> argument in the call."
     echo
     echo "Usage:  Require all eleven arguments ---> `basename $0 $1` $augment_list"
     echo
@@ -252,7 +252,7 @@ eval $(aws2-wrap $AWS_PROFILE --export)
 export AWS_REGION=$(aws configure get region $AWS_PROFILE)
 
 # Confluent Root Path
-confluent_secret_root_path=/confluent_cloud_resource/cc_cluster_linking_privatelink_iac_demo
+confluent_secret_root_path=/confluent_cloud_resource/iac-cc-aws_privatelink-cluster_linking-example
 
 # Function to deploy infrastructure
 deploy_infrastructure() {

@@ -8,7 +8,7 @@ resource "time_sleep" "wait_for_stream_governance" {
 }
 
 # Config the environment's schema registry
-data "confluent_schema_registry_cluster" "cluster_linking_demo" {
+data "confluent_schema_registry_cluster" "aws_privatelink_example" {
   environment {
     id = confluent_environment.non_prod.id
   }
@@ -20,7 +20,7 @@ data "confluent_schema_registry_cluster" "cluster_linking_demo" {
 
 # Create the Service Account for the Kafka Cluster API
 resource "confluent_service_account" "schema_registry_cluster_api" {
-    display_name = "cluster_linking_demo_schema_registry_cluster_api"
+    display_name = "aws_privatelink_example_schema_registry_cluster_api"
     description  = "Sandbox Cluster Sharing Schema Registry Cluster API Service Account"
 }
 
@@ -38,9 +38,9 @@ module "schema_registry_cluster_api_key_rotation" {
     }
 
     resource = {
-        id          = data.confluent_schema_registry_cluster.cluster_linking_demo.id
-        api_version = data.confluent_schema_registry_cluster.cluster_linking_demo.api_version
-        kind        = data.confluent_schema_registry_cluster.cluster_linking_demo.kind
+        id          = data.confluent_schema_registry_cluster.aws_privatelink_example.id
+        api_version = data.confluent_schema_registry_cluster.aws_privatelink_example.api_version
+        kind        = data.confluent_schema_registry_cluster.aws_privatelink_example.kind
 
         environment = {
             id = confluent_environment.non_prod.id
@@ -56,21 +56,21 @@ module "schema_registry_cluster_api_key_rotation" {
 resource "confluent_role_binding" "schema_registry_developer_read_all_subjects" {
   principal   = "User:${confluent_service_account.schema_registry_cluster_api.id}"
   role_name   = "DeveloperRead"
-  crn_pattern = "${data.confluent_schema_registry_cluster.cluster_linking_demo.resource_name}/subject=*"
+  crn_pattern = "${data.confluent_schema_registry_cluster.aws_privatelink_example.resource_name}/subject=*"
 
   depends_on = [ 
     confluent_service_account.schema_registry_cluster_api,
-    data.confluent_schema_registry_cluster.cluster_linking_demo
+    data.confluent_schema_registry_cluster.aws_privatelink_example
   ]
 }
 
 resource "confluent_role_binding" "schema_registry_developer_write_all_subjects" {
   principal   = "User:${confluent_service_account.schema_registry_cluster_api.id}"
   role_name   = "DeveloperWrite"
-  crn_pattern = "${data.confluent_schema_registry_cluster.cluster_linking_demo.resource_name}/subject=*"
+  crn_pattern = "${data.confluent_schema_registry_cluster.aws_privatelink_example.resource_name}/subject=*"
 
   depends_on = [ 
     confluent_service_account.schema_registry_cluster_api,
-    data.confluent_schema_registry_cluster.cluster_linking_demo
+    data.confluent_schema_registry_cluster.aws_privatelink_example
   ]
 }
