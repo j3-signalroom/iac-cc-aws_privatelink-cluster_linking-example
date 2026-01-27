@@ -4,11 +4,6 @@ output "privatelink_dns_domain" {
   description = "Confluent PrivateLink DNS domain (e.g., xyz789.us-east-1.aws.private.confluent.cloud)"
 }
 
-output "confluent_privatelink_phz_id" {
-  description = "Confluent Private Hosted Zone ID"
-  value       = aws_route53_zone.privatelink.zone_id
-}
-
 output "sandbox_vpc_endpoint_id" {
   description = "Sandbox VPC Endpoint ID"
   value       = module.sandbox_vpc_privatelink.vpc_endpoint_id
@@ -27,7 +22,7 @@ output "verification" {
       vpc_id          = module.sandbox_vpc.vpc_id
       vpc_cidr        = module.sandbox_vpc.vpc_cidr
       endpoint_id     = module.sandbox_vpc_privatelink.vpc_endpoint_id
-      phz_id          = aws_route53_zone.privatelink.zone_id
+      phz_id          = aws_route53_zone.centralized_dns_vpc.zone_id
     }
     shared = {
       environment_id  = confluent_environment.non_prod.id
@@ -35,8 +30,23 @@ output "verification" {
       vpc_id          = module.shared_vpc.vpc_id
       vpc_cidr        = module.shared_vpc.vpc_cidr
       endpoint_id     = module.shared_vpc_privatelink.vpc_endpoint_id
-      phz_id          = aws_route53_zone.privatelink.zone_id
+      phz_id          = aws_route53_zone.centralized_dns_vpc.zone_id
     }
   }
   description = "Verification information for both environments"
+}
+
+output "centralized_phz_id" {
+  description = "Centralized Private Hosted Zone ID"
+  value       = aws_route53_zone.centralized_dns_vpc.zone_id
+}
+
+output "centralized_phz_name_servers" {
+  description = "Private Hosted Zone name servers"
+  value       = aws_route53_zone.centralized_dns_vpc.name_servers
+}
+
+output "system_resolver_rule_id" {
+  description = "SYSTEM resolver rule ID"
+  value       = aws_route53_resolver_rule.confluent_private_system.id
 }

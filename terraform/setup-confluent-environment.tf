@@ -4,10 +4,6 @@ resource "confluent_environment" "non_prod" {
   stream_governance {
     package = "ESSENTIALS"
   }
-  
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "confluent_private_link_attachment" "non_prod" {

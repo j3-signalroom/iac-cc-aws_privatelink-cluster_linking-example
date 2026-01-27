@@ -23,32 +23,14 @@ resource "aws_vpc_endpoint" "privatelink" {
 # ============================================================================
 # ROUTE53 PRIVATE HOSTED ZONE AND RECORDS
 # ============================================================================
-
-resource "aws_route53_zone" "privatelink" {
-  count = var.create_phz ? 1 : 0
-  
-  name = var.dns_domain
-  
-  vpc {
-    vpc_id = var.vpc_id
-  }
-  
-  tags = {
-    Name        = "phz-${local.network_id}-${var.vpc_id}"
-    VPC         = var.vpc_id
-    Domain      = var.dns_domain
-    Environment = data.confluent_environment.privatelink.display_name
-  }
-}
-
+#
 # Data source for existing PHZ (when shared_phz_id is provided)
 data "aws_route53_zone" "existing" {
-  count   = var.create_phz ? 0 : 1
   zone_id = var.shared_phz_id
 }
 
 locals {
-  shared_phz_id = var.create_phz ? aws_route53_zone.privatelink[0].zone_id : data.aws_route53_zone.existing[0].zone_id
+  shared_phz_id = data.aws_route53_zone.existing.zone_id
 }
 
 # ============================================================================
@@ -57,8 +39,6 @@ locals {
 #
 # Associate the PHZ with the local VPC (only if using existing PHZ AND not TFC agent VPC)
 resource "aws_route53_zone_association" "local_vpc" {
-  count   = var.create_phz ? 0 : 1
-  
   zone_id = local.shared_phz_id
   vpc_id  = var.vpc_id
 }
