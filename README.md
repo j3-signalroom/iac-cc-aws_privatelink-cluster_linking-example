@@ -616,6 +616,7 @@ terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_write_on_d
 terraform state rm 'confluent_cluster_link.sandbox_and_shared'
 terraform state rm 'confluent_kafka_topic.source_stock_trades'
 terraform state rm 'confluent_kafka_mirror_topic.stock_trades_mirror'
+terraform state rm 'confluent_cluster_link.shared_to_sandbox'
 ```
 
 **Navigate back to the root directory:**
