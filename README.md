@@ -1,6 +1,150 @@
 # IaC Confluent Cloud AWS Private Linking with Cluster Linking Example
 
-![network-diagram](docs/images/iac-cc-aws_privatelink-cluster_linking-example-network-diagram.png)
+```mermaid
+flowchart TB
+    subgraph CONFLUENT["Confluent Cloud"]
+        subgraph ENV["Environment: non-prod"]
+            subgraph PLATT["Private Link Attachment"]
+                PLService["PrivateLink Service"]
+                DNSDomain["DNS Domain"]
+            end
+            
+            subgraph SANDBOX_CLUSTER["Sandbox Cluster - Enterprise"]
+                SandboxKafka["Kafka Brokers"]
+                SandboxTopic["dev-stock_trades Topic"]
+                DatagenConnector["Datagen Connector"]
+            end
+            
+            subgraph SHARED_CLUSTER["Shared Cluster - Enterprise"]
+                SharedKafka["Kafka Brokers"]
+                MirrorTopic["dev-stock_trades Mirror"]
+            end
+            
+            subgraph CLUSTER_LINK["Bidirectional Cluster Link"]
+                LinkSandboxShared["sandbox to shared"]
+            end
+            
+            subgraph STREAM_GOV["Stream Governance"]
+                SchemaRegistry["Schema Registry"]
+            end
+        end
+    end
+
+    DatagenConnector --> SandboxTopic
+    SandboxTopic --> LinkSandboxShared
+    LinkSandboxShared --> MirrorTopic
+
+    subgraph AWS["AWS Cloud"]
+        subgraph TGW["Transit Gateway"]
+            TGWCore["TGW Core"]
+            TGWRT["Route Table"]
+        end
+
+        subgraph DNS_VPC["DNS VPC - Centralized"]
+            R53Inbound["Route53 Inbound Resolver"]
+        end
+
+        subgraph VPN_VPC["Client VPN VPC"]
+            VPNEndpoint["Client VPN Endpoint"]
+            VPNClients["VPN Clients"]
+        end
+
+        subgraph TFC_AGENT_VPC["TFC Agent VPC"]
+            TFCAgents["Terraform Cloud Agents"]
+        end
+
+        subgraph SANDBOX_VPC["Sandbox PrivateLink VPC - 10.0.0.0/20"]
+            SandboxSub1["Subnet AZ-1"]
+            SandboxSub2["Subnet AZ-2"]
+            SandboxSub3["Subnet AZ-3"]
+            SandboxVPCE["VPC Endpoint"]
+            SandboxSG["Security Group"]
+        end
+
+        subgraph SHARED_VPC["Shared PrivateLink VPC - 10.1.0.0/20"]
+            SharedSub1["Subnet AZ-1"]
+            SharedSub2["Subnet AZ-2"]
+            SharedSub3["Subnet AZ-3"]
+            SharedVPCE["VPC Endpoint"]
+            SharedSG["Security Group"]
+        end
+
+        subgraph ROUTE53["Route53 DNS Configuration"]
+            PHZ["Private Hosted Zone"]
+            ZonalRecords["Zonal CNAME Records"]
+            WildcardRecord["Wildcard CNAME"]
+            SystemRule["SYSTEM Resolver Rule"]
+        end
+
+        SecretsManager["AWS Secrets Manager"]
+    end
+
+    SandboxVPCE --> SandboxSG
+    SharedVPCE --> SharedSG
+    PHZ --> ZonalRecords
+    PHZ --> WildcardRecord
+
+    SandboxVPCE -->|PrivateLink| PLService
+    SharedVPCE -->|PrivateLink| PLService
+    PLService --> SandboxKafka
+    PLService --> SharedKafka
+
+    SANDBOX_VPC -->|TGW Attachment| TGW
+    SHARED_VPC -->|TGW Attachment| TGW
+    DNS_VPC -->|TGW Attachment| TGW
+    VPN_VPC -->|TGW Attachment| TGW
+    TFC_AGENT_VPC -->|TGW Attachment| TGW
+
+    TFCAgents -->|DNS Query| R53Inbound
+    VPNClients -->|DNS Query| R53Inbound
+    R53Inbound --> PHZ
+    PHZ -->|Returns Endpoint IPs| SandboxVPCE
+    PHZ -->|Returns Endpoint IPs| SharedVPCE
+
+    PHZ -.->|Zone Association| TFC_AGENT_VPC
+    PHZ -.->|Zone Association| DNS_VPC
+    PHZ -.->|Zone Association| VPN_VPC
+    PHZ -.->|Zone Association| SANDBOX_VPC
+    PHZ -.->|Zone Association| SHARED_VPC
+
+    SystemRule -.->|Rule Association| TFC_AGENT_VPC
+    SystemRule -.->|Rule Association| DNS_VPC
+    SystemRule -.->|Rule Association| VPN_VPC
+    SystemRule -.->|Rule Association| SANDBOX_VPC
+    SystemRule -.->|Rule Association| SHARED_VPC
+
+    TFCAgents -->|Kafka 9092 via TGW| SandboxVPCE
+    TFCAgents -->|Kafka 9092 via TGW| SharedVPCE
+    VPNClients -->|Kafka 9092 via TGW| SandboxVPCE
+
+    TFCAgents -.->|API Keys| SecretsManager
+
+    %% Styling - High Contrast Colors
+    style CONFLUENT fill:#1a1a2e,stroke:#e94560,stroke-width:3px,color:#ffffff
+    style ENV fill:#16213e,stroke:#e94560,stroke-width:2px,color:#ffffff
+    style PLATT fill:#e94560,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style SANDBOX_CLUSTER fill:#0f3460,stroke:#00d9ff,stroke-width:2px,color:#ffffff
+    style SHARED_CLUSTER fill:#0f3460,stroke:#00d9ff,stroke-width:2px,color:#ffffff
+    style CLUSTER_LINK fill:#533483,stroke:#e94560,stroke-width:2px,color:#ffffff
+    style STREAM_GOV fill:#0f3460,stroke:#00d9ff,stroke-width:2px,color:#ffffff
+
+    style AWS fill:#232f3e,stroke:#ff9900,stroke-width:3px,color:#ffffff
+    style TGW fill:#ff9900,stroke:#232f3e,stroke-width:3px,color:#000000
+    style DNS_VPC fill:#1b998b,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style VPN_VPC fill:#3066be,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style TFC_AGENT_VPC fill:#7209b7,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style SANDBOX_VPC fill:#2d6a4f,stroke:#95d5b2,stroke-width:2px,color:#ffffff
+    style SHARED_VPC fill:#2d6a4f,stroke:#95d5b2,stroke-width:2px,color:#ffffff
+    style ROUTE53 fill:#1b998b,stroke:#ffffff,stroke-width:2px,color:#ffffff
+
+    style PLService fill:#e94560,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style SandboxVPCE fill:#d62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style SharedVPCE fill:#d62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style TGWCore fill:#ff9900,stroke:#000000,stroke-width:2px,color:#000000
+    style TGWRT fill:#ff9900,stroke:#000000,stroke-width:2px,color:#000000
+    style PHZ fill:#1b998b,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style SecretsManager fill:#dd6b20,stroke:#ffffff,stroke-width:2px,color:#ffffff
+```
 
 This repository provides **production-grade Terraform infrastructure-as-code** that implements a **secure, multi-network Confluent Cloud architecture**. It demonstrates **AWS PrivateLink connectivity from a single Confluent Cloud environment to multiple AWS VPCs**, enabling private, network-isolated access without exposing traffic to the public internet.
 
@@ -96,44 +240,54 @@ The diagram illustrates:
 - **Confluent PrivateLink SG** — Inbound 443/9092 from agents
 
 ## **2.0 Project's Architecture Overview**
-**Confluent Cloud Environment (non-prod):**
 
-| Component | Details |
-|-----------|---------|
-| **Sandbox Cluster** | Enterprise tier, HIGH availability, hosts `dev-stock_trades` topic |
-| **Shared Cluster** | Enterprise tier, HIGH availability, receives mirrored data |
-| **Cluster Linking** | Bidirectional link replicates `dev-stock_trades` between clusters |
-| **DataGen Connector** | Produces STOCK_TRADES data in AVRO format |
-| **Schema Registry** | Stream Governance ESSENTIALS package for schema management |
-| **PrivateLink Attachment** | Single attachment exposes both clusters to AWS |
+## Key Features Required for Confluent PrivateLink to Work (Confluent Cloud Configuration)
 
-**Service Accounts & RBAC:**
-- **Cluster Managers** — CloudClusterAdmin role for each cluster
-- **Producers/Consumers** — Topic-specific ACLs (READ/WRITE/DESCRIBE)
-- **Connector SA** — DESCRIBE cluster, WRITE/CREATE topics
-- **Cluster Linking SAs** — EnvironmentAdmin for link management
-- **Schema Registry SA** — DeveloperRead/Write on all subjects
+### **1. Confluent Private Link Attachment (Environment-Level)**
+- Single `confluent_private_link_attachment` resource created at the environment level for AWS region
+- Provides the `vpc_endpoint_service_name` that AWS VPC Endpoints connect to
+- Provides the `dns_domain` (e.g., `*.aws.private.confluent.cloud`) for DNS configuration
+- Multiple VPCs can share the same PrivateLink attachment via separate VPC Endpoints
 
-**AWS PrivateLink VPCs:**
-- **Sandbox VPC** (10.0.0.0/20) — 3 AZ private subnets with VPC Endpoint
-- **Shared VPC** (10.1.0.0/20) — 3 AZ private subnets with VPC Endpoint
-- Both attached to Transit Gateway with route propagation
+### **2. AWS VPC Endpoint Configuration**
+- Interface VPC Endpoints (`vpc_endpoint_type = "Interface"`) in each workload VPC
+- **Critical**: `private_dns_enabled = false` — DNS handled via centralized Private Hosted Zones instead
+- Security groups allowing inbound on ports 443 (HTTPS), 9092 (Kafka), and 53 (DNS) from TFC Agent VPC, VPN VPC, VPN Client CIDR, and local VPC CIDR
+- Endpoints deployed across multiple AZs (3 subnets) for high availability
 
-**DNS Architecture:**
-- **Private Hosted Zone** — Centralized PHZ for Confluent domain
-- **Wildcard + Zonal CNAMEs** — Route to VPC Endpoint DNS entries
-- **SYSTEM Resolver Rule** — Associated with all 5 VPCs (DNS, VPN, TFC Agent, Sandbox, Shared)
+### **3. Confluent Private Link Attachment Connection**
+- `confluent_private_link_attachment_connection` links the AWS VPC Endpoint ID to the Confluent PrivateLink attachment
+- Creates the bidirectional connection between AWS and Confluent Cloud
+- Depends on Route53 zone associations being complete first (`time_sleep` for propagation)
 
-**Security & Secrets:**
-- **Security Groups** — Allow ports 443 (HTTPS), 9092 (Kafka), 53 (DNS) from TFC Agent and VPN CIDRs
-- **Secrets Manager** — Stores JAAS configs and bootstrap servers for all service accounts
-- **API Key Rotation** — 30-day rotation with 2 keys retained per service account
+### **4. Centralized Private Hosted Zone (PHZ) Strategy**
+- Single PHZ created for the Confluent DNS domain, associated with **all VPCs** that need access
+- **Zonal CNAME records**: `*.{availability-zone-id}.{dns_domain}` → AZ-specific VPC Endpoint DNS
+- **Wildcard CNAME record**: `*.{dns_domain}` → Primary VPC Endpoint DNS
 
-**Connectivity Flow:**
-1. VPN/TFC Agent clients resolve `*.<AWS_REGION>.aws.private.confluent.cloud` via PHZ
-2. DNS returns VPC Endpoint private IPs
-3. Traffic routes through Transit Gateway to appropriate PrivateLink VPC
-4. VPC Endpoint forwards to Confluent Cloud via AWS PrivateLink
+### **5. Route53 SYSTEM Resolver Rule**
+- `rule_type = "SYSTEM"` tells Route53 to use Private Hosted Zones for the Confluent domain
+- Rule associated with every VPC that needs Confluent access
+
+### **6. Transit Gateway Routing**
+- Each PrivateLink VPC attached to TGW with DNS support enabled
+- Route table association AND route propagation configured
+- Routes added from PrivateLink VPCs back to all consumer VPCs
+
+### **7. Multi-Cluster Architecture with Cluster Linking**
+- Two Enterprise Kafka clusters (Sandbox and Shared) in the same environment
+- Bidirectional Cluster Link with mirror topics for data replication
+
+### **8. Service Account & API Key Management**
+- Separate service accounts per role with API key rotation
+- ACLs granting specific permissions per service account
+- API keys stored in AWS Secrets Manager
+
+### **9. DNS Propagation Timing**
+- `time_sleep` resources ensuring DNS propagates before dependent resources (1-2 minutes)
+
+### **10. Schema Registry Integration**
+- Stream Governance (Essentials) enabled at environment level with AVRO support
 
 ## **3.0 Let's Get Started**
 
