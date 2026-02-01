@@ -89,32 +89,8 @@ variable "tfc_agent_vpc_cidr" {
 }
 
 variable "tfc_agent_vpc_rt_ids" {
-  description = "List of route table IDs for TFC Agent VPC"
-  type        = list(string)
-  default     = [
-    "rtb-0d3fbc0e6faf2d3e6",
-    "rtb-0fbb7f1f99d9d3ad3",
-    "rtb-0996eb3281e3d9d3d",
-    "rtb-0461aecd651d154cc"
-  ]
-}
-
-variable "sandbox_vpc_rt_ids" {
-  description = "List of route table IDs for Sandbox VPC"
-  type        = list(string)
-  default     = [
-    "rtb-0168e3ad6288061ff",
-    "rtb-03b38f61a8019777f"
-  ]
-}
-
-variable "shared_vpc_rt_ids" {
-  description = "List of route table IDs for Shared VPC"
-  type        = list(string)
-  default     = [
-    "rtb-025d605fea1166d22", 
-    "rtb-01fec7b141660fb06"
-  ]
+  description = "Comma-separated list of route table IDs for TFC Agent VPC"
+  type        = string
 }
 
 # ===================================================
@@ -144,7 +120,6 @@ variable "tgw_rt_id" {
 variable "vpn_vpc_id" {
   description = "VPN Client VPC ID - Private Hosted Zones will be associated with this VPC"
   type        = string
-  default     = "vpc-05946aab047008805"
 }
 
 variable "vpn_client_vpc_cidr" {
@@ -159,11 +134,7 @@ variable "vpn_vpc_cidr" {
 
 variable "vpn_client_vpc_rt_ids" {
   description = "List of route table IDs for VPN Client VPC"
-  type        = list(string)
-  default     = [
-    "rtb-03864e3b099d45c70",
-    "rtb-0a872eae8a88644af"
-  ]
+  type        = string
 }
 
 variable "dns_vpc_cidr" {
