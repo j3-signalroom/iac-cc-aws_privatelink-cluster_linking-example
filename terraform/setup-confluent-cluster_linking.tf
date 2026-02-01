@@ -85,6 +85,7 @@ module "shared_cluster_linking_app_manager_api_key" {
 resource "confluent_cluster_link" "sandbox_and_shared" {
   link_name = "bidirectional-between-sandbox-and-shared"
   link_mode = "BIDIRECTIONAL"
+  
   local_kafka_cluster {
     id            = confluent_kafka_cluster.sandbox_cluster.id
     rest_endpoint = confluent_kafka_cluster.sandbox_cluster.rest_endpoint
@@ -109,38 +110,10 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
   ]
 }
 
-# Reverse link: Shared -> Sandbox (required for bidirectional mode)
-resource "confluent_cluster_link" "shared_to_sandbox" {
-  link_name = "bidirectional-between-sandbox-and-shared"
-  link_mode = "BIDIRECTIONAL"
-  
-  local_kafka_cluster {
-    id            = confluent_kafka_cluster.shared_cluster.id
-    rest_endpoint = confluent_kafka_cluster.shared_cluster.rest_endpoint
-    credentials {
-      key    = module.shared_cluster_linking_app_manager_api_key.active_api_key.id
-      secret = module.shared_cluster_linking_app_manager_api_key.active_api_key.secret
-    }
-  }
-
-  remote_kafka_cluster {
-    id                 = confluent_kafka_cluster.sandbox_cluster.id
-    bootstrap_endpoint = confluent_kafka_cluster.sandbox_cluster.bootstrap_endpoint
-    credentials {
-      key    = module.sandbox_cluster_linking_app_manager_api_key.active_api_key.id
-      secret = module.sandbox_cluster_linking_app_manager_api_key.active_api_key.secret
-    }
-  }
-
-  depends_on = [
-    confluent_cluster_link.sandbox_and_shared
-  ]
-}
-
 # Wait for Cluster Link to be active before creating reverse link
 resource "time_sleep" "wait_for_cluster_linking" {
   depends_on = [
-    confluent_cluster_link.shared_to_sandbox
+    confluent_cluster_link.sandbox_and_shared
   ]
   
   create_duration = "1m"
