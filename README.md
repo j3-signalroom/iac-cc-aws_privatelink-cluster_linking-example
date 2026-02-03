@@ -195,7 +195,9 @@ Below is the Terraform resource visualization of the infrastructure that's creat
         + [**2.1.10 Schema Registry Integration**](#2110-schema-registry-integration)
 + [**3.0 Let's Get Started**](#30-lets-get-started)
     - [**3.1 Deploy the Infrastructure**](#31-deploy-the-infrastructure)
+        + [**3.1.1 Optional Arguments**](#311-optional-arguments)
     - [**3.2 Teardown the Infrastructure**](#32-teardown-the-infrastructure)
+        + [**3.2.1 Optional Arguments**](#321-optional-arguments)
 + [**4.0 References**](#40-references)
     - [**4.1 Terminology**](#41-terminology)
     - [**4.2 Related Documentation**](#42-related-documentation)
@@ -568,8 +570,53 @@ flowchart TB
 ## **3.0 Let's Get Started**
 
 ### **3.1 Deploy the Infrastructure**
+The deploy.sh script handles authentication and Terraform execution: 
+
+```bash
+./deploy.sh create \
+  --profile=<SSO_PROFILE_NAME> \
+  --confluent-api-key=<CONFLUENT_API_KEY> \
+  --confluent-api-secret=<CONFLUENT_API_SECRET> \
+  --tfe-token=<TFE_TOKEN> \
+  --tgw-id=<TGW_ID> \
+  --tgw-rt-id=<TGW_RT_ID> \
+  --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
+  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
+  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
+  --dns-vpc-id=<DNS_VPC_ID> \
+  --vpn-vpc-id=<VPN_VPC_ID> \
+  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
+  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
+  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
+```
+
+#### 3.1.1 Optional Arguments
+```bash
+--dns-vpc-cidr=<DNS_VPC_CIDR>    # Default: 10.255.0.0/24
+--day-count=<DAY_COUNT>          # Default: 30 (API key rotation interval)
+```
 
 ### **3.2 Teardown the Infrastructure**
+```bash
+./deploy.sh destroy \
+  --profile=<SSO_PROFILE_NAME> \
+  --confluent-api-key=<CONFLUENT_API_KEY> \
+  --confluent-api-secret=<CONFLUENT_API_SECRET> \
+  --tfe-token=<TFE_TOKEN> \
+  --tgw-id=<TGW_ID> \
+  --tgw-rt-id=<TGW_RT_ID> \
+  --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
+  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
+  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
+  --dns-vpc-id=<DNS_VPC_ID> \
+  --vpn-vpc-id=<VPN_VPC_ID> \
+  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
+  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
+  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
+```
+
+#### 3.2.1 Handling DNS Resolution Errors During Destroy
+If you encounter DNS resolution errors during the destroy process, you may see error messages similar to the following:
 
 ```bash
 ╷
@@ -626,6 +673,21 @@ cd ..
 
 **Rerun the destroy command:**
 ```bash
+./deploy.sh destroy \
+  --profile=<SSO_PROFILE_NAME> \
+  --confluent-api-key=<CONFLUENT_API_KEY> \
+  --confluent-api-secret=<CONFLUENT_API_SECRET> \
+  --tfe-token=<TFE_TOKEN> \
+  --tgw-id=<TGW_ID> \
+  --tgw-rt-id=<TGW_RT_ID> \
+  --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
+  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
+  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
+  --dns-vpc-id=<DNS_VPC_ID> \
+  --vpn-vpc-id=<VPN_VPC_ID> \
+  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
+  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
+  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
 ```
 
 ## **4.0 Resources**
