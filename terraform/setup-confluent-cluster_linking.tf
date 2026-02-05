@@ -115,7 +115,8 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
     confluent_kafka_acl.sandbox_cluster_app_connector_write_on_target_topic,
     confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_group,
     confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_topic,
-    confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls
+    confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls,
+    confluent_connector.source
   ]
 }
 
