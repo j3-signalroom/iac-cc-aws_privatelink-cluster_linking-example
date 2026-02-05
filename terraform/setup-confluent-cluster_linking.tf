@@ -83,7 +83,7 @@ module "shared_cluster_linking_app_manager_api_key" {
 }
 
 resource "confluent_cluster_link" "sandbox_and_shared" {
-  link_name = "bidirectional-between-sandbox-and-shared"
+  link_name = "bidirectional_between_sandbox_and_shared"
   link_mode = "BIDIRECTIONAL"
   local_kafka_cluster {
     id            = confluent_kafka_cluster.sandbox_cluster.id
@@ -111,7 +111,7 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
 
 # Reverse link: Shared -> Sandbox (required for bidirectional mode)
 resource "confluent_cluster_link" "shared_to_sandbox" {
-  link_name = "bidirectional-between-sandbox-and-shared"
+  link_name = "bidirectional_between_sandbox_and_shared"
   link_mode = "BIDIRECTIONAL"
   
   local_kafka_cluster {

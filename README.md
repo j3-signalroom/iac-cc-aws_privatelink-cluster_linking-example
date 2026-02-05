@@ -596,6 +596,24 @@ The deploy.sh script handles authentication and Terraform execution:
 --day-count=<DAY_COUNT>          # Default: 30 (API key rotation interval)
 ```
 
+```bash
+╷
+│ Error: error creating Cluster Link: 400 Bad Request: A cluster link already exists with the provided link name: Cluster Link _fA8DRTZSvGrLkTur7e8-Q already exists.
+│ 
+│   with confluent_cluster_link.shared_to_sandbox,
+│   on setup-confluent-cluster_linking.tf line 113, in resource "confluent_cluster_link" "shared_to_sandbox":
+│  113: resource "confluent_cluster_link" "shared_to_sandbox" {
+│ 
+╵
+```
+
+```bash
+confluent kafka link list --cluster lkc-27dvgm --environment env-5y6mpq
+
+
+```
+
+
 ### **3.2 Teardown the Infrastructure**
 ```bash
 ./deploy.sh destroy \
