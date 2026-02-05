@@ -88,11 +88,6 @@ variable "tfc_agent_vpc_cidr" {
   type        = string
 }
 
-variable "tfc_agent_vpc_rt_ids" {
-  description = "Comma-separated list of route table IDs for TFC Agent VPC"
-  type        = string
-}
-
 # ===================================================
 # DNS VPC CONFIGURATION
 # ===================================================
@@ -129,11 +124,6 @@ variable "vpn_client_vpc_cidr" {
 
 variable "vpn_vpc_cidr" {
   description = "VPN VPC CIDR"
-  type        = string
-}
-
-variable "vpn_client_vpc_rt_ids" {
-  description = "List of route table IDs for VPN Client VPC"
   type        = string
 }
 
