@@ -682,6 +682,11 @@ terraform state rm 'confluent_cluster_link.sandbox_and_shared'
 terraform state rm 'confluent_kafka_topic.source_stock_trades'
 terraform state rm 'confluent_kafka_mirror_topic.stock_trades_mirror'
 terraform state rm 'confluent_cluster_link.shared_to_sandbox'
+terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_topic'
+terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_group'
+terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls["DESCRIBE"]'
+terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls["READ"]'
+terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls["WRITE"]'
 ```
 
 **Navigate back to the root directory:**
