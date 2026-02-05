@@ -105,7 +105,17 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
 
   depends_on = [
     module.sandbox_vpc_privatelink,
-    module.shared_vpc_privatelink
+    module.shared_vpc_privatelink,
+    confluent_kafka_cluster.sandbox_cluster,
+    confluent_kafka_cluster.shared_cluster,
+    confluent_kafka_topic.source_stock_trades,
+    confluent_kafka_acl.sandbox_cluster_app_connector_create_on_data_preview_topics,
+    confluent_kafka_acl.sandbox_cluster_app_connector_describe_on_cluster,
+    confluent_kafka_acl.sandbox_cluster_app_connector_write_on_data_preview_topics,
+    confluent_kafka_acl.sandbox_cluster_app_connector_write_on_target_topic,
+    confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_group,
+    confluent_kafka_acl.sandbox_cluster_app_consumer_read_on_topic,
+    confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls
   ]
 }
 
