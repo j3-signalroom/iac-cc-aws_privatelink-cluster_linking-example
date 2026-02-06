@@ -588,10 +588,10 @@ The deploy.sh script handles authentication and Terraform execution:
   [--day-count=<DAY_COUNT>]             # Default: 30 (API key rotation interval)
 ```
 
-**Handling DNS Resolution Errors**:
+**Handling DNS Resolution Errors:**
 If you encounter DNS resolution errors during the apply process, simply re-run the `deploy.sh` script with the `create` command.
 
-**Cluster Linking Error**:
+**Cluster Linking Error:**
 ```bash
 ╷
 │ Error: error creating Cluster Link: 400 Bad Request: A cluster link already exists with the provided link name: Cluster Link _fA8DRTZSvGrLkTur7e8-Q already exists.
@@ -667,7 +667,7 @@ If you encounter DNS resolution errors during the destroy process, do the follow
 cd terraform
 ```
 
-***Remove the unreachable resources from the Terraform state:**
+**Remove the unreachable resources from the Terraform state:**
 ```bash
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_describe_on_cluster'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_write_on_target_topic'
