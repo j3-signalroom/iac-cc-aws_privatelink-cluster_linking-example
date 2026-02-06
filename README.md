@@ -195,9 +195,7 @@ Below is the Terraform resource visualization of the infrastructure that's creat
         + [**2.1.10 Schema Registry Integration**](#2110-schema-registry-integration)
 + [**3.0 Let's Get Started**](#30-lets-get-started)
     - [**3.1 Deploy the Infrastructure**](#31-deploy-the-infrastructure)
-        + [**3.1.1 Optional Arguments**](#311-optional-arguments)
     - [**3.2 Teardown the Infrastructure**](#32-teardown-the-infrastructure)
-        + [**3.2.1 Optional Arguments**](#321-optional-arguments)
 + [**4.0 References**](#40-references)
     - [**4.1 Terminology**](#41-terminology)
     - [**4.2 Related Documentation**](#42-related-documentation)
@@ -581,21 +579,19 @@ The deploy.sh script handles authentication and Terraform execution:
   --tgw-id=<TGW_ID> \
   --tgw-rt-id=<TGW_RT_ID> \
   --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
-  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
   --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
   --dns-vpc-id=<DNS_VPC_ID> \
   --vpn-vpc-id=<VPN_VPC_ID> \
   --vpn-vpc-cidr=<VPN_VPC_CIDR> \
   --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
-  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
+  [--dns-vpc-cidr=<DNS_VPC_CIDR>] \     # Default: 10.255.0.0/24
+  [--day-count=<DAY_COUNT>]             # Default: 30 (API key rotation interval)
 ```
 
-#### 3.1.1 Optional Arguments
-```bash
---dns-vpc-cidr=<DNS_VPC_CIDR>    # Default: 10.255.0.0/24
---day-count=<DAY_COUNT>          # Default: 30 (API key rotation interval)
-```
+**Handling DNS Resolution Errors**:
+If you encounter DNS resolution errors during the apply process, simply re-run the `deploy.sh` script with the `create` command.
 
+**Cluster Linking Error**:
 ```bash
 ╷
 │ Error: error creating Cluster Link: 400 Bad Request: A cluster link already exists with the provided link name: Cluster Link _fA8DRTZSvGrLkTur7e8-Q already exists.
@@ -607,12 +603,13 @@ The deploy.sh script handles authentication and Terraform execution:
 ╵
 ```
 
+If you see the above error, it indicates that the previous failed attempt left the cluster link in place. To resolve, delete the existing cluster link via the Confluent CLI:
+
 ```bash
-confluent kafka link list --cluster lkc-27dvgm --environment env-5y6mpq
-
-
+confluent kafka link delete bidirectional_between_sandbox_and_shared --cluster <SANDBOX_CLUSTER_ID> --environment <NON_PROD_ENV_ID> --force
 ```
 
+Then re-run the `deploy.sh` script with the `create` command.
 
 ### **3.2 Teardown the Infrastructure**
 ```bash
@@ -624,13 +621,11 @@ confluent kafka link list --cluster lkc-27dvgm --environment env-5y6mpq
   --tgw-id=<TGW_ID> \
   --tgw-rt-id=<TGW_RT_ID> \
   --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
-  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
   --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
   --dns-vpc-id=<DNS_VPC_ID> \
   --vpn-vpc-id=<VPN_VPC_ID> \
   --vpn-vpc-cidr=<VPN_VPC_CIDR> \
-  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
-  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
+  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR>
 ```
 
 #### 3.2.1 Handling DNS Resolution Errors During Destroy
@@ -694,24 +689,7 @@ terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_producer_prefix_acls
 cd ..
 ```
 
-**Rerun the destroy command:**
-```bash
-./deploy.sh destroy \
-  --profile=<SSO_PROFILE_NAME> \
-  --confluent-api-key=<CONFLUENT_API_KEY> \
-  --confluent-api-secret=<CONFLUENT_API_SECRET> \
-  --tfe-token=<TFE_TOKEN> \
-  --tgw-id=<TGW_ID> \
-  --tgw-rt-id=<TGW_RT_ID> \
-  --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
-  --tfc-agent-vpc-rt-ids=<TFC_AGENT_VPC_RT_IDS> \
-  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
-  --dns-vpc-id=<DNS_VPC_ID> \
-  --vpn-vpc-id=<VPN_VPC_ID> \
-  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
-  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
-  --vpn-client-vpc-rt-ids=<VPN_CLIENT_VPC_RT_IDS>
-```
+Rerun the `deploy.sh` script with the `destroy` command.
 
 ## **4.0 Resources**
 
