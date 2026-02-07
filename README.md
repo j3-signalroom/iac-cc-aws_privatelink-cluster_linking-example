@@ -223,7 +223,11 @@ Below is the Terraform resource visualization of the infrastructure that's creat
         + [**2.1.10 Schema Registry Integration**](#2110-schema-registry-integration)
 + [**3.0 Let's Get Started**](#30-lets-get-started)
     - [**3.1 Deploy the Infrastructure**](#31-deploy-the-infrastructure)
+        + [**3.1.1 Handling DNS Resolution Errors**](#311-handling-dns-resolution-errors)
+        + [**3.1.2 Cluster Linking Error**](#312-cluster-linking-error)
     - [**3.2 Teardown the Infrastructure**](#32-teardown-the-infrastructure)
+        + [**3.2.1 Handling Cluster Link Deletion Error(s)**](#321-handling-cluster-link-deletion-errors)
+        + [**3.2.2 Handling DNS Resolution Errors**](#322-handling-dns-resolution-errors)
 + [**4.0 References**](#40-references)
     - [**4.1 Terminology**](#41-terminology)
     - [**4.2 Related Documentation**](#42-related-documentation)
@@ -612,14 +616,34 @@ The deploy.sh script handles authentication and Terraform execution:
   --vpn-vpc-id=<VPN_VPC_ID> \
   --vpn-vpc-cidr=<VPN_VPC_CIDR> \
   --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
-  [--dns-vpc-cidr=<DNS_VPC_CIDR>] \     # Default: 10.255.0.0/24
-  [--day-count=<DAY_COUNT>]             # Default: 30 (API key rotation interval)
+  [--dns-vpc-cidr=<DNS_VPC_CIDR>] \     `# Default: 10.255.0.0/24`
+  [--day-count=<DAY_COUNT>]             `# Default: 30 (API key rotation interval)`
 ```
 
-**Handling DNS Resolution Errors:**
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `create` | ✅ | — | The command to execute. `create` deploys the infrastructure via `terraform apply`.|
+| `--profile` | ✅ | — | The AWS SSO profile name. Passed directly to `aws sso login` and `aws2-wrap` for authentication, and used to resolve `AWS_REGION`. |
+| `--confluent-api-key` | ✅ | — | Confluent Cloud API key. Exported as `TF_VAR_confluent_api_key` for Terraform. |
+| `--confluent-api-secret` | ✅ | — | Confluent Cloud API secret. Exported as `TF_VAR_confluent_api_secret` for Terraform. |
+| `--tfe-token` | ✅ | — | Terraform Enterprise/Cloud API token. Exported as `TF_VAR_tfe_token` — used for authenticating the TFC Agent or remote backend. |
+| `--tgw-id` | ✅ | — | AWS Transit Gateway ID. Exported as `TF_VAR_tgw_id` for routing between VPCs. |
+| `--tgw-rt-id` | ✅ | — | AWS Transit Gateway Route Table ID. Exported as `TF_VAR_tgw_rt_id` for associating route entries. |
+| `--tfc-agent-vpc-id` | ✅ | — | VPC ID where the Terraform Cloud Agent resides. Exported as `TF_VAR_tfc_agent_vpc_id`. |
+| `--tfc-agent-vpc-cidr` | ✅ | — | CIDR block of the TFC Agent VPC. Exported as `TF_VAR_tfc_agent_vpc_cidr` — used for security group and routing rules. |
+| `--dns-vpc-id` | ✅ | — | VPC ID hosting the DNS infrastructure (Route 53 Resolver endpoints). Exported as `TF_VAR_dns_vpc_id`. |
+| `--vpn-vpc-id` | ✅ | — | VPC ID where the AWS Client VPN endpoint is deployed. Exported as `TF_VAR_vpn_vpc_id`. |
+| `--vpn-vpc-cidr` | ✅ | — | CIDR block of the VPN VPC. Exported as `TF_VAR_vpn_vpc_cidr`. |
+| `--vpn-client-vpc-cidr` | ✅ | — | Client-side CIDR range assigned to VPN clients. Exported as `TF_VAR_vpn_client_vpc_cidr`. |
+| `--dns-vpc-cidr` | ❌ | `10.255.0.0/24` | CIDR block of the DNS VPC. Exported as `TF_VAR_dns_vpc_cidr`. |
+| `--day-count` | ❌ | `30` | API key rotation interval in days. Exported as `TF_VAR_day_count`. |
+
+#### **3.1.1 Handling DNS Resolution Errors**
+
 If you encounter DNS resolution errors during the apply process, simply re-run the `deploy.sh` script with the `create` command.
 
-**Cluster Linking Error:**
+#### **3.1.2 Cluster Linking Error**
+
 ```bash
 ╷
 │ Error: error creating Cluster Link: 400 Bad Request: A cluster link already exists with the provided link name: Cluster Link _fA8DRTZSvGrLkTur7e8-Q already exists.
@@ -656,7 +680,23 @@ Then re-run the `deploy.sh` script with the `create` command.
   --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR>
 ```
 
-**Handling Cluster Link Deletion Error(s):**
+| Argument | Required | Default | Description |
+|---|---|---|---|
+| `destroy` | ✅ | — | The command to execute. `destroy` tears it down via `terraform destroy` and force-deletes associated AWS Secrets Manager secrets. |
+| `--profile` | ✅ | — | The AWS SSO profile name. Passed directly to `aws sso login` and `aws2-wrap` for authentication, and used to resolve `AWS_REGION`. |
+| `--confluent-api-key` | ✅ | — | Confluent Cloud API key. Exported as `TF_VAR_confluent_api_key` for Terraform. |
+| `--confluent-api-secret` | ✅ | — | Confluent Cloud API secret. Exported as `TF_VAR_confluent_api_secret` for Terraform. |
+| `--tfe-token` | ✅ | — | Terraform Enterprise/Cloud API token. Exported as `TF_VAR_tfe_token` — used for authenticating the TFC Agent or remote backend. |
+| `--tgw-id` | ✅ | — | AWS Transit Gateway ID. Exported as `TF_VAR_tgw_id` for routing between VPCs. |
+| `--tgw-rt-id` | ✅ | — | AWS Transit Gateway Route Table ID. Exported as `TF_VAR_tgw_rt_id` for associating route entries. |
+| `--tfc-agent-vpc-id` | ✅ | — | VPC ID where the Terraform Cloud Agent resides. Exported as `TF_VAR_tfc_agent_vpc_id`. |
+| `--tfc-agent-vpc-cidr` | ✅ | — | CIDR block of the TFC Agent VPC. Exported as `TF_VAR_tfc_agent_vpc_cidr` — used for security group and routing rules. |
+| `--dns-vpc-id` | ✅ | — | VPC ID hosting the DNS infrastructure (Route 53 Resolver endpoints). Exported as `TF_VAR_dns_vpc_id`. |
+| `--vpn-vpc-id` | ✅ | — | VPC ID where the AWS Client VPN endpoint is deployed. Exported as `TF_VAR_vpn_vpc_id`. |
+| `--vpn-vpc-cidr` | ✅ | — | CIDR block of the VPN VPC. Exported as `TF_VAR_vpn_vpc_cidr`. |
+| `--vpn-client-vpc-cidr` | ✅ | — | Client-side CIDR range assigned to VPN clients. Exported as `TF_VAR_vpn_client_vpc_cidr`. |
+
+#### **3.2.1 Handling Cluster Link Deletion Error(s)**
 
 If you encounter a Cluster Link deletion error during the destroy process, you may see an error message similar to the following:
 
@@ -688,7 +728,7 @@ cd ..
 
 Rerun the `deploy.sh` script with the `destroy` command.
 
-**Handling DNS Resolution Errors:**
+#### **3.2.2 Handling DNS Resolution Errors**
 
 If you encounter DNS resolution errors during the destroy process, you may see error messages similar to the following:
 
