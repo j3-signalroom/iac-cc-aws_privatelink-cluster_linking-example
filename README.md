@@ -170,16 +170,11 @@ graph TB
     AKR -.->|stores credentials| SM
 ```
 
-This repository provides **production-grade Terraform infrastructure-as-code** that implements a **secure, multi-network Confluent Cloud architecture**. It demonstrates **AWS PrivateLink connectivity from a single Confluent Cloud environment to multiple AWS VPCs**, enabling private, network-isolated access without exposing traffic to the public internet.
+This Terraform configuration showcases a fully private, production-grade connectivity architecture between AWS and Confluent Cloud using AWS PrivateLink and Cluster Linking. It provisions a non-production Confluent environment with two Enterprise-tier, highly available Kafka clusters: a sandbox cluster generating simulated stock trade events via a DataGen connector, and a shared cluster that receives those events through bidirectional cluster linking with automatic mirror topics.
 
-The solution also showcases **in-region Cluster Linking between two Confluent Cloud Kafka clusters**, enabling **low-latency, fully managed data replication** across teams, lines of business, or isolated environments (for example, development, staging, and production) within the same AWS region.
+The AWS deployment includes two multi-AZ VPCs with private subnets connected to Confluent Cloud through PrivateLink interface endpoints, ensuring all Kafka traffic stays off the public internet. A Transit Gateway hub integrates these networks with existing VPN and DNS services, while a centralized Route 53 Private Hosted Zone enables consistent cross-VPC resolution through wildcard and zonal CNAME records.
 
-Cluster Linking maintains an **in-sync mirror of selected topics** on the consuming cluster. This isolation allows consuming teams to independently scale **large numbers of consumers, stream processing applications, and downstream sinks** without impacting the producing cluster. From the producer’s perspective, the load is equivalent to **a single additional consumer**, regardless of downstream scale.
-
-![iac-cc-aws_privatelink-cluster_linking-example](docs/images/iac-cc-aws_privatelink-cluster_linking-example.png)
-
-Access control and ownership remain cleanly separated: the producing team grants **scoped read credentials** to approved topics, while the consuming team **creates, owns, monitors, and manages the cluster link**. This pattern enables secure, scalable data sharing with clear operational boundaries and minimal coupling.
-
+Additional capabilities include Schema Registry with Stream Governance Essentials, automated API key rotation backed by AWS Secrets Manager, and Terraform Cloud agent execution — delivering a secure, scalable, and reproducible reference architecture for operating Confluent Cloud on AWS.
 Below is the Terraform resource visualization of the infrastructure that's created:
 
 ![terraform-visualization](docs/images/terraform-visualization.png)
