@@ -170,11 +170,20 @@ graph TB
     AKR -.->|stores credentials| SM
 ```
 
-This Terraform configuration showcases a fully private, production-grade connectivity architecture between AWS and Confluent Cloud using AWS PrivateLink and Cluster Linking. It provisions a non-production Confluent environment with two Enterprise-tier, highly available Kafka clusters: a sandbox cluster generating simulated stock trade events via a DataGen connector, and a shared cluster that receives those events through bidirectional cluster linking with automatic mirror topics.
+This Terraform configuration demonstrates how to build a fully private, production-grade connectivity architecture between AWS and Confluent Cloud using AWS PrivateLink and Confluent Cluster Linking. It addresses a key architectural constraint: **_Confluent PrivateLink attachments share a non-unique DNS namespace, while AWS Route 53 prevents associating multiple Private Hosted Zones (PHZs) with the same domain name across overlapping VPC associations. As a result, separate PHZs cannot be created per cluster and distributed across interconnected VPCs_**.
 
-The AWS deployment includes two multi-AZ VPCs with private subnets connected to Confluent Cloud through PrivateLink interface endpoints, ensuring all Kafka traffic stays off the public internet. A Transit Gateway hub integrates these networks with existing VPN and DNS services, while a centralized Route 53 Private Hosted Zone enables consistent cross-VPC resolution through wildcard and zonal CNAME records.
+To resolve this, the repository implements a **centralized PHZ shared across all participating VPCs**, using wildcard and zonal CNAME records to route traffic to the appropriate interface endpoints. This ensures deterministic DNS resolution and enables scalable multi-cluster connectivity across the network fabric.
 
-Additional capabilities include Schema Registry with Stream Governance Essentials, automated API key rotation backed by AWS Secrets Manager, and Terraform Cloud agent execution — delivering a secure, scalable, and reproducible reference architecture for operating Confluent Cloud on AWS.
+The configuration provisions a non-production Confluent Cloud environment with two Enterprise-tier, highly available Kafka clusters:
+
+- a sandbox cluster that ingests simulated stock trade events via a DataGen source connector
+
+- a shared cluster that receives those events through bidirectional Cluster Linking with automatic mirror topic synchronization
+
+On the AWS side, the deployment creates two dedicated multi-AZ VPCs with private subnets, each connected to Confluent Cloud through PrivateLink interface endpoints so all Kafka traffic remains off the public internet. A Transit Gateway hub integrates these VPCs with existing VPN and DNS infrastructure, while Route 53 Resolver rules ensure seamless name resolution across all spoke networks.
+
+Additional capabilities include Schema Registry with Stream Governance Essentials, automated API key rotation with credentials stored in AWS Secrets Manager, and agent-based execution via Terraform Cloud. The result is a complete, reproducible reference architecture for securely operating multiple Confluent Cloud clusters over PrivateLink at scale on AWS.
+
 Below is the Terraform resource visualization of the infrastructure that's created:
 
 ![terraform-visualization](docs/images/terraform-visualization.png)
