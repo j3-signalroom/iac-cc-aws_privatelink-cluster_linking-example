@@ -2,7 +2,7 @@
 
 #
 # *** Purpose ***
-# To deploy or destroy the infrastructure for the Confluent Cloud Cluster Linking with PrivateLink example.
+# To create or destroy the infrastructure for the Confluent Cloud Cluster Linking with PrivateLink example.
 #
 # *** Script Syntax ***
 # ./deploy.sh=<create | destroy> --profile=<SSO_PROFILE_NAME>
