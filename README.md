@@ -610,12 +610,8 @@ The deploy.sh script handles authentication and Terraform execution:
   --tgw-id=<TGW_ID> \
   --tgw-rt-id=<TGW_RT_ID> \
   --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
-  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
   --dns-vpc-id=<DNS_VPC_ID> \
   --vpn-vpc-id=<VPN_VPC_ID> \
-  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
-  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> \
-  [--dns-vpc-cidr=<DNS_VPC_CIDR>] \     `# Default: 10.255.0.0/24`
   [--day-count=<DAY_COUNT>]             `# Default: 30 (API key rotation interval)`
 ```
 
@@ -629,12 +625,8 @@ The deploy.sh script handles authentication and Terraform execution:
 | `--tgw-id` | ✅ | — | AWS Transit Gateway ID. Exported as `TF_VAR_tgw_id` for routing between VPCs. |
 | `--tgw-rt-id` | ✅ | — | AWS Transit Gateway Route Table ID. Exported as `TF_VAR_tgw_rt_id` for associating route entries. |
 | `--tfc-agent-vpc-id` | ✅ | — | VPC ID where the Terraform Cloud Agent resides. Exported as `TF_VAR_tfc_agent_vpc_id`. |
-| `--tfc-agent-vpc-cidr` | ✅ | — | CIDR block of the TFC Agent VPC. Exported as `TF_VAR_tfc_agent_vpc_cidr` — used for security group and routing rules. |
 | `--dns-vpc-id` | ✅ | — | VPC ID hosting the DNS infrastructure (Route 53 Resolver endpoints). Exported as `TF_VAR_dns_vpc_id`. |
 | `--vpn-vpc-id` | ✅ | — | VPC ID where the AWS Client VPN endpoint is deployed. Exported as `TF_VAR_vpn_vpc_id`. |
-| `--vpn-vpc-cidr` | ✅ | — | CIDR block of the VPN VPC. Exported as `TF_VAR_vpn_vpc_cidr`. |
-| `--vpn-client-vpc-cidr` | ✅ | — | Client-side CIDR range assigned to VPN clients. Exported as `TF_VAR_vpn_client_vpc_cidr`. |
-| `--dns-vpc-cidr` | ❌ | `10.255.0.0/24` | CIDR block of the DNS VPC. Exported as `TF_VAR_dns_vpc_cidr`. |
 | `--day-count` | ❌ | `30` | API key rotation interval in days. Exported as `TF_VAR_day_count`. |
 
 #### **3.1.1 Handling DNS Resolution Errors**
@@ -721,11 +713,8 @@ Then re-run the `deploy.sh` script with the `create` command.
   --tgw-id=<TGW_ID> \
   --tgw-rt-id=<TGW_RT_ID> \
   --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> \
-  --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> \
   --dns-vpc-id=<DNS_VPC_ID> \
   --vpn-vpc-id=<VPN_VPC_ID> \
-  --vpn-vpc-cidr=<VPN_VPC_CIDR> \
-  --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR>
 ```
 
 | Argument | Required | Default | Description |
@@ -738,11 +727,8 @@ Then re-run the `deploy.sh` script with the `create` command.
 | `--tgw-id` | ✅ | — | AWS Transit Gateway ID. Exported as `TF_VAR_tgw_id` for routing between VPCs. |
 | `--tgw-rt-id` | ✅ | — | AWS Transit Gateway Route Table ID. Exported as `TF_VAR_tgw_rt_id` for associating route entries. |
 | `--tfc-agent-vpc-id` | ✅ | — | VPC ID where the Terraform Cloud Agent resides. Exported as `TF_VAR_tfc_agent_vpc_id`. |
-| `--tfc-agent-vpc-cidr` | ✅ | — | CIDR block of the TFC Agent VPC. Exported as `TF_VAR_tfc_agent_vpc_cidr` — used for security group and routing rules. |
 | `--dns-vpc-id` | ✅ | — | VPC ID hosting the DNS infrastructure (Route 53 Resolver endpoints). Exported as `TF_VAR_dns_vpc_id`. |
 | `--vpn-vpc-id` | ✅ | — | VPC ID where the AWS Client VPN endpoint is deployed. Exported as `TF_VAR_vpn_vpc_id`. |
-| `--vpn-vpc-cidr` | ✅ | — | CIDR block of the VPN VPC. Exported as `TF_VAR_vpn_vpc_cidr`. |
-| `--vpn-client-vpc-cidr` | ✅ | — | Client-side CIDR range assigned to VPN clients. Exported as `TF_VAR_vpn_client_vpc_cidr`. |
 
 #### **3.2.1 Handling Cluster Link Deletion Error(s)**
 

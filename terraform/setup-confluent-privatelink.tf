@@ -18,8 +18,8 @@ module "sandbox_vpc_privatelink" {
   dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
   
   # VPN configuration
-  vpn_client_vpc_cidr = var.vpn_client_vpc_cidr
-  vpn_vpc_cidr        = var.vpn_vpc_cidr
+  vpn_client_vpc_cidr = data.aws_ec2_client_vpn_endpoint.client_vpn.client_cidr_block
+  vpn_vpc_cidr        = data.aws_vpc.vpn.cidr_block
 
   # Confluent Cloud configuration
   confluent_environment_id = confluent_environment.non_prod.id
@@ -27,10 +27,10 @@ module "sandbox_vpc_privatelink" {
 
   # Terraform Cloud Agent configuration
   tfc_agent_vpc_id         = var.tfc_agent_vpc_id 
-  tfc_agent_vpc_cidr       = var.tfc_agent_vpc_cidr
+  tfc_agent_vpc_cidr       = data.aws_vpc.tfc_agent.cidr_block
 
   # DNS configuration
-  dns_vpc_cidr             = var.dns_vpc_cidr
+  dns_vpc_cidr             = data.aws_vpc.dns.cidr_block
 
   # Use shared PHZ
   shared_phz_id            = aws_route53_zone.centralized_dns_vpc.zone_id
@@ -60,8 +60,8 @@ module "shared_vpc_privatelink" {
   dns_domain               = confluent_private_link_attachment.non_prod.dns_domain
   
   # VPN configuration
-  vpn_client_vpc_cidr = var.vpn_client_vpc_cidr
-  vpn_vpc_cidr        = var.vpn_vpc_cidr
+  vpn_client_vpc_cidr = data.aws_ec2_client_vpn_endpoint.client_vpn.client_cidr_block
+  vpn_vpc_cidr        = data.aws_vpc.vpn.cidr_block
   
   # Confluent Cloud configuration
   confluent_environment_id = confluent_environment.non_prod.id
@@ -69,10 +69,10 @@ module "shared_vpc_privatelink" {
 
   # Terraform Cloud Agent configuration
   tfc_agent_vpc_id         = var.tfc_agent_vpc_id 
-  tfc_agent_vpc_cidr       = var.tfc_agent_vpc_cidr
+  tfc_agent_vpc_cidr       = data.aws_vpc.tfc_agent.cidr_block
 
   # DNS configuration
-  dns_vpc_cidr             = var.dns_vpc_cidr
+  dns_vpc_cidr             = data.aws_vpc.dns.cidr_block
 
   # Use shared PHZ
   shared_phz_id            = aws_route53_zone.centralized_dns_vpc.zone_id
