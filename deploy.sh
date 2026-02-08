@@ -51,7 +51,7 @@ TERRAFORM_DIR="$SCRIPT_DIR/terraform"
 
 print_info "Terraform Directory: $TERRAFORM_DIR"
 
-arugument_list="--profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --tfe-token=<TFE_TOKEN> --tgw-id=<TGW_ID> --tgw-rt-id=<TGW_RT_ID> --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> --dns-vpc-id=<DNS_VPC_ID> --vpn-vpc-id=<VPN_VPC_ID>"
+argument_list="--profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --tfe-token=<TFE_TOKEN> --tgw-id=<TGW_ID> --tgw-rt-id=<TGW_RT_ID> --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> --dns-vpc-id=<DNS_VPC_ID> --vpn-vpc-id=<VPN_VPC_ID>"
 
 # Check required command (create or destroy) was supplied
 case $1 in
@@ -63,7 +63,7 @@ case $1 in
     echo
     print_error "(Error Message 001)  You did not specify one of the commands: create | destroy."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0`=<create | destroy> $arugument_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0`=<create | destroy> $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
     ;;
@@ -78,7 +78,6 @@ tgw_id=""
 tgw_rt_id=""
 tfc_agent_vpc_id=""
 dns_vpc_id=""
-
 vpn_vpc_id=""
 
 # Default optional variable(s)
@@ -128,7 +127,7 @@ then
     echo
     print_error "(Error Message 002)  You did not include the proper use of the --profile=<SSO_PROFILE_NAME> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -139,7 +138,7 @@ then
     echo
     print_error "(Error Message 003)  You did not include the proper use of the --confluent-api-key=<CONFLUENT_API_KEY> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -150,7 +149,7 @@ then
     echo
     print_error "(Error Message 004)  You did not include the proper use of the --confluent-api-secret=<CONFLUENT_API_SECRET> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -161,7 +160,7 @@ then
     echo
     print_error "(Error Message 005)  You did not include the proper use of the --tfe-token=<TFE_TOKEN> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -172,7 +171,7 @@ then
     echo
     print_error "(Error Message 006)  You did not include the proper use of the --tgw-id=<TGW_ID> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -183,7 +182,7 @@ then
     echo
     print_error "(Error Message 007)  You did not include the proper use of the --tgw-rt-id=<TGW_RT_ID> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -194,7 +193,7 @@ then
     echo
     print_error "(Error Message 008)  You did not include the proper use of the --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -205,7 +204,7 @@ then
     echo
     print_error "(Error Message 009)  You did not include the proper use of the --dns-vpc-id=<DNS_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -216,7 +215,7 @@ then
     echo "$@"
     print_error "(Error Message 010)  You did not include the proper use of the --vpn-vpc-id=<VPN_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all nine arguments ---> `basename $0 $1` $argument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
