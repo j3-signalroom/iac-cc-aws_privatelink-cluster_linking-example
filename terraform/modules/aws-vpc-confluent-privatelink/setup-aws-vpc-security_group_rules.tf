@@ -1,6 +1,4 @@
-# ============================================================================
-# SECURITY GROUP RULES FOR THE VPC
-# ============================================================================
+# Create the security group
 resource "aws_security_group" "privatelink" {
   name        = "ccloud-privatelink_${local.network_id}_${aws_vpc.privatelink.id}"
   description = "Confluent Cloud Private Link Security Group for ${var.dns_domain}"
@@ -17,6 +15,7 @@ resource "aws_security_group" "privatelink" {
   }
 }
 
+# Create the required SG rule for Kafka REST API access
 resource "aws_security_group_rule" "allow_https" {
   description       = "HTTPS from VPC, TFC Agent VPCs, and VPN clients"
   type              = "ingress"
@@ -27,6 +26,7 @@ resource "aws_security_group_rule" "allow_https" {
   security_group_id = aws_security_group.privatelink.id
 }
 
+# Create the required SG rule for Kafka broker access
 resource "aws_security_group_rule" "allow_kafka" {
   description       = "Kafka from VPC, TFC Agent VPCs, and VPN clients"
   type              = "ingress"
@@ -37,6 +37,10 @@ resource "aws_security_group_rule" "allow_kafka" {
   security_group_id = aws_security_group.privatelink.id
 }
 
+# Create the required SG rule for DNS resolution of the PrivateLink endpoint
+# UDP (primary) — Used for standard DNS queries. Most DNS lookups are small enough to fit 
+# in a single UDP packet (512 bytes, or 4096 with EDNS). It's connectionless, so it's faster 
+# with less overhead.
 resource "aws_security_group_rule" "allow_dns_udp" {
   description       = "DNS (UDP) from VPC, TFC Agent VPCs, and VPN clients"
   type              = "ingress"
@@ -47,6 +51,10 @@ resource "aws_security_group_rule" "allow_dns_udp" {
   security_group_id = aws_security_group.privatelink.id
 }
 
+# Create the required SG rule for DNS resolution of the PrivateLink endpoint
+# TCP (fallback) — Used when a DNS response exceeds the UDP size limit (e.g., large record sets,
+# DNSSEC responses), or when zone transfers occur. TCP handles the reliable delivery of larger \
+# payloads via its connection-oriented stream.
 resource "aws_security_group_rule" "allow_dns_tcp" {
   description       = "DNS (TCP) from VPC, TFC Agent VPCs, and VPN clients"
   type              = "ingress"
