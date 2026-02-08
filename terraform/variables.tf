@@ -111,8 +111,3 @@ variable "vpn_vpc_id" {
   description = "VPN Client VPC ID - Private Hosted Zones will be associated with this VPC"
   type        = string
 }
-
-variable "vpn_client_vpc_cidr" {
-  description = "VPN Client VPC CIDR"
-  type        = string
-}

@@ -14,6 +14,13 @@ data "aws_vpc" "vpn" {
   id = var.vpn_vpc_id
 }
 
+data "aws_ec2_client_vpn_endpoint" "client_vpn" {
+  filter {
+    name   = "tag:Name"
+    values = ["client-vpn"]
+  }
+}
+
 locals {
   cloud = "AWS"
   acl_operations = ["READ", "WRITE", "DESCRIBE"]
