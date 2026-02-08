@@ -15,3 +15,8 @@ locals {
   # Extract network ID from DNS domain
   network_id = split(".", var.dns_domain)[0]
 }
+
+# Get the shared PHZ details
+data "aws_route53_zone" "shared_phz" {
+  zone_id = var.shared_phz_id
+}

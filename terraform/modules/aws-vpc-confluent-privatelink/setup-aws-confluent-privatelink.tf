@@ -1,4 +1,4 @@
-# VPC Endpoint
+# Create VPC Endpoint
 resource "aws_vpc_endpoint" "privatelink" {
   vpc_id              = aws_vpc.privatelink.id
   service_name        = var.privatelink_service_name
@@ -20,26 +20,9 @@ resource "aws_vpc_endpoint" "privatelink" {
   ]
 }
 
-# ============================================================================
-# ROUTE53 PRIVATE HOSTED ZONE AND RECORDS
-# ============================================================================
-#
-# Data source for existing PHZ (when shared_phz_id is provided)
-data "aws_route53_zone" "existing" {
-  zone_id = var.shared_phz_id
-}
-
-locals {
-  shared_phz_id = data.aws_route53_zone.existing.zone_id
-}
-
-# ============================================================================
-# VPC ASSOCIATIONS
-# ============================================================================
-#
-# Associate the PHZ with the local VPC (only if using existing PHZ AND not TFC agent VPC)
+# Associate the shared PHZ with the local VPC
 resource "aws_route53_zone_association" "local_vpc" {
-  zone_id = local.shared_phz_id
+  zone_id = data.aws_route53_zone.shared_phz.zone_id
   vpc_id  = aws_vpc.privatelink.id
 }
 
@@ -52,6 +35,7 @@ resource "time_sleep" "wait_for_zone_associations" {
   create_duration = "1m"
 }
 
+# Create the Confluent PrivateLink Attachment Connection
 resource "confluent_private_link_attachment_connection" "privatelink" {
   display_name = "ccloud-plattc-${local.network_id}"
   
