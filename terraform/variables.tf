@@ -83,11 +83,6 @@ variable "tfc_agent_vpc_id" {
   type        = string
 }
 
-variable "tfc_agent_vpc_cidr" {
-  description = "Terraform Cloud Agent VPC CIDR"
-  type        = string
-}
-
 # ===================================================
 # DNS VPC CONFIGURATION
 # ===================================================
@@ -120,15 +115,4 @@ variable "vpn_vpc_id" {
 variable "vpn_client_vpc_cidr" {
   description = "VPN Client VPC CIDR"
   type        = string
-}
-
-variable "vpn_vpc_cidr" {
-  description = "VPN VPC CIDR"
-  type        = string
-}
-
-variable "dns_vpc_cidr" {
-  description = "DNS VPC CIDR"
-  type        = string
-  default     = "10.255.0.0/24"
 }

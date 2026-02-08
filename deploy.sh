@@ -12,12 +12,8 @@
 #                                --tgw-id=<TGW_ID>
 #                                --tgw-rt-id=<TGW_RT_ID>
 #                                --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID>
-#                                --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR>
 #                                --dns-vpc-id=<DNS_VPC_ID>
-#                                --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR>
 #                                --vpn-vpc-id=<VPN_VPC_ID>
-#                                --vpn-vpc-cidr=<VPN_VPC_CIDR>
-#                                [--dns-vpc-cidr=<DNS_VPC_CIDR>]
 #                                [--day-count=<DAY_COUNT>]
 #
 #
@@ -55,7 +51,7 @@ TERRAFORM_DIR="$SCRIPT_DIR/terraform"
 
 print_info "Terraform Directory: $TERRAFORM_DIR"
 
-arugument_list="--profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --tfe-token=<TFE_TOKEN> --tgw-id=<TGW_ID> --tgw-rt-id=<TGW_RT_ID> --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> --dns-vpc-id=<DNS_VPC_ID> --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> --vpn-vpc-cidr=<VPN_VPC_CIDR> --vpn-vpc-id=<VPN_VPC_ID>"
+arugument_list="--profile=<SSO_PROFILE_NAME> --confluent-api-key=<CONFLUENT_API_KEY> --confluent-api-secret=<CONFLUENT_API_SECRET> --tfe-token=<TFE_TOKEN> --tgw-id=<TGW_ID> --tgw-rt-id=<TGW_RT_ID> --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> --dns-vpc-id=<DNS_VPC_ID> --vpn-vpc-id=<VPN_VPC_ID>"
 
 # Check required command (create or destroy) was supplied
 case $1 in
@@ -67,7 +63,7 @@ case $1 in
     echo
     print_error "(Error Message 001)  You did not specify one of the commands: create | destroy."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0`=<create | destroy> $arugument_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0`=<create | destroy> $arugument_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
     ;;
@@ -81,11 +77,8 @@ tfe_token=""
 tgw_id=""
 tgw_rt_id=""
 tfc_agent_vpc_id=""
-tfc_agent_vpc_cidr=""
 dns_vpc_id=""
-vpn_client_vpc_cidr=""
-vpn_vpc_cidr=""
-dns_vpc_cidr="10.255.0.0/24"
+
 vpn_vpc_id=""
 
 # Default optional variable(s)
@@ -114,27 +107,15 @@ do
         *"--tgw-rt-id="*)
             arg_length=12
             tgw_rt_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--tfc-agent-vpc-cidr="*)
-            arg_length=21
-            tfc_agent_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--tfc-agent-vpc-id="*)
             arg_length=19
             tfc_agent_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--dns-vpc-id="*)
             arg_length=13
             dns_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--vpn-client-vpc-cidr="*)
-            arg_length=22
-            vpn_client_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--vpn-vpc-cidr="*)
-            arg_length=15
-            vpn_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;    
         *"--day-count="*)
             arg_length=12
             day_count=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
-        *"--dns-vpc-cidr="*)
-            arg_length=15
-            dns_vpc_cidr=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
         *"--vpn-vpc-id="*)
             arg_length=13
             vpn_vpc_id=${arg:$arg_length:$(expr ${#arg} - $arg_length)};;
@@ -147,7 +128,7 @@ then
     echo
     print_error "(Error Message 002)  You did not include the proper use of the --profile=<SSO_PROFILE_NAME> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -158,7 +139,7 @@ then
     echo
     print_error "(Error Message 003)  You did not include the proper use of the --confluent-api-key=<CONFLUENT_API_KEY> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -169,7 +150,7 @@ then
     echo
     print_error "(Error Message 004)  You did not include the proper use of the --confluent-api-secret=<CONFLUENT_API_SECRET> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -180,7 +161,7 @@ then
     echo
     print_error "(Error Message 005)  You did not include the proper use of the --tfe-token=<TFE_TOKEN> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -191,7 +172,7 @@ then
     echo
     print_error "(Error Message 006)  You did not include the proper use of the --tgw-id=<TGW_ID> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -202,7 +183,7 @@ then
     echo
     print_error "(Error Message 007)  You did not include the proper use of the --tgw-rt-id=<TGW_RT_ID> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -213,18 +194,7 @@ then
     echo
     print_error "(Error Message 008)  You did not include the proper use of the --tfc-agent-vpc-id=<TFC_AGENT_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
-# Check required --tfc-agent-vpc-cidr argument was supplied
-if [ -z "$tfc_agent_vpc_cidr" ]
-then
-    echo
-    print_error "(Error Message 009)  You did not include the proper use of the --tfc-agent-vpc-cidr=<TFC_AGENT_VPC_CIDR> argument in the call."
-    echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -233,20 +203,9 @@ fi
 if [ -z "$dns_vpc_id" ]
 then
     echo
-    print_error "(Error Message 010)  You did not include the proper use of the --dns-vpc-id=<DNS_VPC_ID> argument in the call."
+    print_error "(Error Message 009)  You did not include the proper use of the --dns-vpc-id=<DNS_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
-    echo
-    exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
-fi
-
-# Check required --vpn-client-vpc-cidr argument was supplied
-if [ -z "$vpn_client_vpc_cidr" ]
-then
-    echo
-    print_error "(Error Message 011)  You did not include the proper use of the --vpn-client-vpc-cidr=<VPN_CLIENT_VPC_CIDR> argument in the call."
-    echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -255,9 +214,9 @@ fi
 if [ -z "$vpn_vpc_id" ]
 then
     echo "$@"
-    print_error "(Error Message 012)  You did not include the proper use of the --vpn-vpc-id=<VPN_VPC_ID> argument in the call."
+    print_error "(Error Message 010)  You did not include the proper use of the --vpn-vpc-id=<VPN_VPC_ID> argument in the call."
     echo
-    print_error "Usage:  Require all twelve arguments ---> `basename $0 $1` $augment_list"
+    print_error "Usage:  Require all ten arguments ---> `basename $0 $1` $augment_list"
     echo
     exit 85 # Common GNU/Linux Exit Code for 'Interrupted system call should be restarted'
 fi
@@ -290,12 +249,8 @@ deploy_infrastructure() {
     # \ntfe_token=\"${tfe_token}\"\
     # \ndns_vpc_id=\"${dns_vpc_id}\"\
     # \ntfc_agent_vpc_id=\"${tfc_agent_vpc_id}\"\
-    # \ntfc_agent_vpc_cidr=\"${tfc_agent_vpc_cidr}\"\
     # \nday_count=${day_count}\
-    # \nvpn_client_vpc_cidr=\"${vpn_client_vpc_cidr}\"\
-    # \nvpn_vpc_cidr=\"${vpn_vpc_cidr}\"\
     # \nvpn_vpc_id=\"${vpn_vpc_id}\"\
-    # \ndns_vpc_cidr=\"${dns_vpc_cidr}\"\
     # \ntgw_id=\"${tgw_id}\"
     # \ntgw_rt_id=\"${tgw_rt_id}\"" > terraform.tfvars
 
@@ -311,12 +266,8 @@ deploy_infrastructure() {
     export TF_VAR_tfe_token="${tfe_token}"
     export TF_VAR_dns_vpc_id="${dns_vpc_id}"
     export TF_VAR_tfc_agent_vpc_id="${tfc_agent_vpc_id}"
-    export TF_VAR_tfc_agent_vpc_cidr="${tfc_agent_vpc_cidr}"
-    export TF_VAR_vpn_client_vpc_cidr="${vpn_client_vpc_cidr}"
-    export TF_VAR_vpn_vpc_cidr="${vpn_vpc_cidr}"
     export TF_VAR_tgw_id="${tgw_id}"
     export TF_VAR_tgw_rt_id="${tgw_rt_id}"
-    export TF_VAR_dns_vpc_cidr="${dns_vpc_cidr}"
     export TF_VAR_vpn_vpc_id="${vpn_vpc_id}"
 
     # Initialize Terraform
@@ -372,12 +323,8 @@ undeploy_infrastructure() {
     export TF_VAR_tfe_token="${tfe_token}"
     export TF_VAR_dns_vpc_id="${dns_vpc_id}"
     export TF_VAR_tfc_agent_vpc_id="${tfc_agent_vpc_id}"
-    export TF_VAR_tfc_agent_vpc_cidr="${tfc_agent_vpc_cidr}"
-    export TF_VAR_vpn_client_vpc_cidr="${vpn_client_vpc_cidr}"
-    export TF_VAR_vpn_vpc_cidr="${vpn_vpc_cidr}"
     export TF_VAR_tgw_id="${tgw_id}"
     export TF_VAR_tgw_rt_id="${tgw_rt_id}"
-    export TF_VAR_dns_vpc_cidr="${dns_vpc_cidr}"
     export TF_VAR_vpn_vpc_id="${vpn_vpc_id}"
 
     # Destroy
