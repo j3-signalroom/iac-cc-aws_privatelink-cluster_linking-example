@@ -227,7 +227,6 @@ Below is the Terraform resource visualization of the infrastructure that's creat
         + [**3.1.2 Cluster Linking Error**](#312-cluster-linking-error)
     - [**3.2 Teardown the Infrastructure**](#32-teardown-the-infrastructure)
         + [**3.2.1 Handling Cluster Link Deletion Error(s)**](#321-handling-cluster-link-deletion-errors)
-        + [**3.2.2 Handling DNS Resolution Errors**](#322-handling-dns-resolution-errors)
 + [**4.0 References**](#40-references)
     - [**4.1 Terminology**](#41-terminology)
     - [**4.2 Related Documentation**](#42-related-documentation)
@@ -767,74 +766,6 @@ cd terraform
 ```bash
 terraform state rm 'confluent_cluster_link.sandbox_and_shared'
 terraform state rm 'confluent_cluster_link.shared_to_sandbox'
-```
-
-**Navigate back to the root directory:**
-
-```bash
-cd ..
-```
-
-Rerun the `deploy.sh` script with the `destroy` command.
-
-#### **3.2.2 Handling DNS Resolution Errors**
-
-If you encounter DNS resolution errors during the destroy process, you may see error messages similar to the following:
-
-```bash
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#dev-stock_trades#LITERAL#User:sa-81j9gv0#*#DESCRIBE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=DESCRIBE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-81j9gv0&resource_name=dev-stock_trades&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#dev-stock_trades#LITERAL#User:sa-zmrv663#*#READ#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=READ&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-zmrv663&resource_name=dev-stock_trades&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/GROUP#sandbox_aws_privatelink_example_#LITERAL#User:sa-zmrv663#*#READ#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=READ&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-zmrv663&resource_name=sandbox_aws_privatelink_example_&resource_type=GROUP": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#sandbox_aws_privatelink_example_#LITERAL#User:sa-w7xq219#*#WRITE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=WRITE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-w7xq219&resource_name=sandbox_aws_privatelink_example_&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/CLUSTER#kafka-cluster#LITERAL#User:sa-w7xq219#*#DESCRIBE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=DESCRIBE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-w7xq219&resource_name=kafka-cluster&resource_type=CLUSTER": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#dev-stock_trades#LITERAL#User:sa-w7xq219#*#WRITE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=WRITE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-w7xq219&resource_name=dev-stock_trades&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#sandbox_aws_privatelink_example_#LITERAL#User:sa-w7xq219#*#CREATE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=CREATE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-w7xq219&resource_name=sandbox_aws_privatelink_example_&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#dev-stock_trades#LITERAL#User:sa-81j9gv0#*#READ#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=READ&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-81j9gv0&resource_name=dev-stock_trades&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-│ 
-│ 
-╵
-╷
-│ Error: error deleting Kafka ACLs "lkc-y08xyo/TOPIC#dev-stock_trades#LITERAL#User:sa-81j9gv0#*#WRITE#ALLOW": Delete "https://lkc-y08xyo.us-east-1.aws.private.confluent.cloud:443/kafka/v3/clusters/lkc-y08xyo/acls?host=%2A&operation=WRITE&pattern_type=LITERAL&permission=ALLOW&principal=User%3Asa-81j9gv0&resource_name=dev-stock_trades&resource_type=TOPIC": dial tcp: lookup lkc-y08xyo.us-east-1.aws.private.confluent.cloud: no such host
-
-Operation failed: failed running terraform apply (exit 1)
-```
-
-**Navigate to the Terraform directory:**
-```bash
-cd terraform
-```
-
-**Remove the unreachable resources from the Terraform state:**
-
-```bash
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_describe_on_cluster'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_write_on_target_topic'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_create_on_data_preview_topics'
