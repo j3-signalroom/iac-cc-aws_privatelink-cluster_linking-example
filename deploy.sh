@@ -253,7 +253,7 @@ deploy_infrastructure() {
     # \ntgw_id=\"${tgw_id}\"
     # \ntgw_rt_id=\"${tgw_rt_id}\"" > terraform.tfvars
 
-    # Export AWS credentials, Confluent credentials and optional variables as environment variables
+    # Export Terraform variables as environment variables
     export TF_VAR_aws_region="${AWS_REGION}"
     export TF_VAR_aws_access_key_id="${AWS_ACCESS_KEY_ID}"
     export TF_VAR_aws_secret_access_key="${AWS_SECRET_ACCESS_KEY}"
@@ -310,7 +310,7 @@ undeploy_infrastructure() {
     print_info "Initializing Terraform..."
     terraform init
     
-    # Export AWS credentials, Confluent credentials and optional variables as environment variables
+    # Export Terraform variables as environment variables
     export TF_VAR_aws_region="${AWS_REGION}"
     export TF_VAR_aws_access_key_id="${AWS_ACCESS_KEY_ID}"
     export TF_VAR_aws_secret_access_key="${AWS_SECRET_ACCESS_KEY}"
