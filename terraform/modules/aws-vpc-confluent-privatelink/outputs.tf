@@ -71,7 +71,7 @@ output "vpc_endpoint_dns" {
 
 output "route53_zone_id" {
   description = "Route53 Private Hosted Zone ID (either created or existing)"
-  value       = local.shared_phz_id
+  value       = data.aws_route53_zone.shared_phz.zone_id
 }
 
 output "route53_zone_name" {

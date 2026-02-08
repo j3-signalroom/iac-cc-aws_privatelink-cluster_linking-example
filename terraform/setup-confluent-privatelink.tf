@@ -161,9 +161,37 @@ resource "aws_route53_zone_association" "confluent_to_vpn_vpc" {
   ]
 }
 
-# ===================================================================================
+# ===========================================================================================================
 # SYSTEM RESOLVER RULE
-# ===================================================================================
+# ===========================================================================================================
+#
+# A SYSTEM resolver rule tells Route 53 Resolver to use the default VPC DNS resolution
+# behavior for that domain — meaning it resolves using the Route 53 Private Hosted Zone (PHZ) 
+# associated with the VPC, rather than forwarding the query elsewhere.
+# 
+# Why it's needed:
+# By default, VPC DNS resolution already checks PHZs. But if there are any FORWARD resolver
+# rules (e.g., sending DNS queries to on-prem or another DNS server) that match a broader
+# domain, they take precedence. A SYSTEM rule for a specific domain like our Confluent
+# PrivateLink domain overrides that and says:
+#
+# "For this specific domain, don't forward — resolve it locally using the shared PHZ."
+#
+# Rule precedence in Route 53 Resolver:
+#
+# 1. Most specific domain match wins
+# 2. If same specificity: FORWARD beats SYSTEM
+# 3. A SYSTEM rule on a specific subdomain beats a FORWARD rule on a parent domain
+#
+# So in our case, this ensures that DNS queries for confluent_private_link_attachment.non_prod.dns_domain
+# resolve to the PrivateLink endpoint IPs in your PHZ, even if a broader forwarding rule exists in
+# the environment.
+#
+# Note: If your VPCs have no conflicting FORWARD rules, you might get away without this. But it's a best practice
+# to explicitly define it to avoid any surprises in complex environments.
+#
+#
+# Create a SYSTEM resolver rule for the Confluent PrivateLink domain
 resource "aws_route53_resolver_rule" "confluent_private_system" {
   domain_name = confluent_private_link_attachment.non_prod.dns_domain
   name        = "confluent-privatelink-phz-system"
