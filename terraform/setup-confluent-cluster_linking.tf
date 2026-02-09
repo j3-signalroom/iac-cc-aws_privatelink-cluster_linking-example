@@ -82,7 +82,7 @@ module "shared_cluster_linking_app_manager_api_key" {
   ]
 }
 
-resource "confluent_cluster_link" "sandbox_and_shared" {
+resource "confluent_cluster_link" "sandbox_and_shared_outbound" {
   link_name = "bidirectional_between_sandbox_and_shared"
   link_mode = "BIDIRECTIONAL"
   local_kafka_cluster {
@@ -121,7 +121,7 @@ resource "confluent_cluster_link" "sandbox_and_shared" {
 }
 
 # Reverse link: Shared -> Sandbox (required for bidirectional mode)
-resource "confluent_cluster_link" "shared_to_sandbox" {
+resource "confluent_cluster_link" "sandbox_and_shared_inbound" {
   link_name = "bidirectional_between_sandbox_and_shared"
   link_mode = "BIDIRECTIONAL"
   
@@ -151,7 +151,7 @@ resource "confluent_cluster_link" "shared_to_sandbox" {
 # Wait for Cluster Link to be active before creating reverse link
 resource "time_sleep" "wait_for_cluster_linking" {
   depends_on = [
-    confluent_cluster_link.shared_to_sandbox
+    confluent_cluster_link.sandbox_and_shared_outbound
   ]
   
   create_duration = "1m"
