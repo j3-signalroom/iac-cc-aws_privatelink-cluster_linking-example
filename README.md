@@ -750,8 +750,8 @@ cd terraform
 **Remove the unreachable resources from the Terraform state:**
 
 ```bash
-terraform state rm 'confluent_cluster_link.sandbox_and_shared'
-terraform state rm 'confluent_cluster_link.shared_to_sandbox'
+terraform state rm 'confluent_cluster_link.sandbox_and_shared_outbound'
+terraform state rm 'confluent_cluster_link.sandbox_and_shared_inbound'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_describe_on_cluster'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_write_on_target_topic'
 terraform state rm 'confluent_kafka_acl.sandbox_cluster_app_connector_create_on_data_preview_topics'
