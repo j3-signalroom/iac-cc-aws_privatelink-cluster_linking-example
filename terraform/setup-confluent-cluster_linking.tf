@@ -144,7 +144,7 @@ resource "confluent_cluster_link" "sandbox_and_shared_inbound" {
   }
 
   depends_on = [
-    confluent_cluster_link.sandbox_and_shared
+    confluent_cluster_link.sandbox_and_shared_outbound
   ]
 }
 
@@ -162,7 +162,7 @@ resource "confluent_kafka_mirror_topic" "stock_trades_mirror" {
     topic_name = confluent_kafka_topic.source_stock_trades.topic_name 
   }
   cluster_link {
-    link_name = confluent_cluster_link.sandbox_and_shared.link_name
+    link_name = confluent_cluster_link.sandbox_and_shared_outbound.link_name
   }
   
   kafka_cluster {
